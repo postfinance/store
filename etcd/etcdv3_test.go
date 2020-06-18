@@ -20,7 +20,7 @@ func TestKeyFunctions(t *testing.T) {
 	const (
 		prefix = "root"
 		middle = "branch"
-		suffix = "leave"
+		suffix = "leaf"
 		relkey = middle + "/" + suffix
 		abskey = prefix + "/" + relkey
 	)
@@ -58,6 +58,12 @@ func TestKeyFunctions(t *testing.T) {
 		b, err := New(WithClient(cli), WithPrefix(prefix))
 		assert.NoError(t, err)
 		assert.Equal(t, b.(*Backend).SplitKey(relkey), []string{middle, suffix})
+	})
+
+	t.Run("split key", func(t *testing.T) {
+		b, err := New(WithClient(cli), WithPrefix(prefix))
+		assert.NoError(t, err)
+		assert.Equal(t, b.(*Backend).KeyLeaf(relkey), suffix)
 	})
 }
 

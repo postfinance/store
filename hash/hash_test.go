@@ -18,7 +18,7 @@ func TestKeyFunctions(t *testing.T) {
 	const (
 		prefix = "root"
 		middle = "branch"
-		suffix = "leave"
+		suffix = "leaf"
 		relkey = middle + "/" + suffix
 		abskey = prefix + "/" + relkey
 	)
@@ -55,6 +55,13 @@ func TestKeyFunctions(t *testing.T) {
 		h, err := hash.New(hash.WithPrefix(prefix))
 		assert.NoError(t, err)
 		assert.Equal(t, h.(*hash.Hash).SplitKey(relkey), []string{middle, suffix})
+		assert.NoError(t, h.Close())
+	})
+
+	t.Run("split key", func(t *testing.T) {
+		h, err := hash.New(hash.WithPrefix(prefix))
+		assert.NoError(t, err)
+		assert.Equal(t, h.(*hash.Hash).KeyLeaf(relkey), suffix)
 		assert.NoError(t, h.Close())
 	})
 }
