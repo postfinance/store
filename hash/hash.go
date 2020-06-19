@@ -20,8 +20,8 @@ type entry struct {
 	TTL     time.Duration
 }
 
-// Hash table backend
-type Hash struct {
+// Backend table backend
+type Backend struct {
 	sync.RWMutex
 	prefix          string
 	prefixReady2Use string
@@ -36,7 +36,7 @@ type Hash struct {
 // AbsKey("a/b") with prefix "root" and separator '/' returns "root/a/b"
 // AbsKey does not validate the given key.
 // Given a faulty relative key returns a faulty absolute key.
-func (h *Hash) AbsKey(k string) string {
+func (h *Backend) AbsKey(k string) string {
 	if h.prefix == "" {
 		return k
 	}
@@ -48,7 +48,7 @@ func (h *Hash) AbsKey(k string) string {
 // RelKey("root/a/b") with prefix "root" and separator '/' returns "a/b"
 // RelKey does not validate the given key.
 // Given a faulty absolute key returns a faulty relativ key.
-func (h *Hash) RelKey(k string) string {
+func (h *Backend) RelKey(k string) string {
 	if h.prefix == "" {
 		return k
 	}
@@ -58,18 +58,18 @@ func (h *Hash) RelKey(k string) string {
 
 // JoinKey returns a formatted key
 // it joins the given elements with the correct delimiter
-func (h *Hash) JoinKey(args ...string) string {
+func (h *Backend) JoinKey(args ...string) string {
 	return strings.Join(args, string(h.separator))
 }
 
 // SplitKey returns the key elements
 // it splits the given key in its elements with the correct delimiter
-func (h *Hash) SplitKey(key string) []string {
+func (h *Backend) SplitKey(key string) []string {
 	return strings.Split(strings.Trim(key, string(h.separator)), string(h.separator))
 }
 
 // KeyLeaf returns the leave (last) element of a key
-func (h *Hash) KeyLeaf(key string) string {
+func (h *Backend) KeyLeaf(key string) string {
 	elems := h.SplitKey(key)
 	if len(elems) > 0 {
 		return elems[len(elems)-1]
@@ -79,12 +79,12 @@ func (h *Hash) KeyLeaf(key string) string {
 }
 
 // TTL returns the configured TTL
-func (h *Hash) TTL() time.Duration {
+func (h *Backend) TTL() time.Duration {
 	return h.ttl
 }
 
 // register a watch key
-func (h *Hash) register(key string, prefix bool, f notifyCallbackFunc) {
+func (h *Backend) register(key string, prefix bool, f notifyCallbackFunc) {
 	h.Lock()
 	if prefix {
 		if _, ok := h.watchKeyPrefix[key]; !ok {
@@ -102,7 +102,7 @@ func (h *Hash) register(key string, prefix bool, f notifyCallbackFunc) {
 }
 
 // notify all registrants
-func (h *Hash) notify(key string, msg changeNotification) {
+func (h *Backend) notify(key string, msg changeNotification) {
 	for _, f := range h.watchKey[key] {
 		f(msg)
 	}
@@ -117,7 +117,7 @@ func (h *Hash) notify(key string, msg changeNotification) {
 }
 
 // exists checks if an entry is expired
-func (h *Hash) exists(e entry) bool {
+func (h *Backend) exists(e entry) bool {
 	// entry has no TTL or an unexpired TTL
 	if e.TTL == 0 || e.Updated.Add(e.TTL).After(time.Now()) {
 		return true
@@ -129,7 +129,7 @@ func (h *Hash) exists(e entry) bool {
 }
 
 // keys returns all keys with prefix
-func (h *Hash) keys(prefix string) []string {
+func (h *Backend) keys(prefix string) []string {
 	keys := []string{}
 
 	h.RLock()
@@ -147,7 +147,7 @@ func (h *Hash) keys(prefix string) []string {
 // Get returns a list of store entries
 // WithPrefix, WithHandler are supported
 // WithContext will be ignored
-func (h *Hash) Get(key string, ops ...store.GetOption) ([]store.Entry, error) {
+func (h *Backend) Get(key string, ops ...store.GetOption) ([]store.Entry, error) {
 	opts := &store.GetOptions{}
 
 	for _, op := range ops {
@@ -213,7 +213,7 @@ func (h *Hash) Get(key string, ops ...store.GetOption) ([]store.Entry, error) {
 // Put insert and/or update an entry in the store
 // WithTTL, WithInsert are supported
 // WithContext will be ignored
-func (h *Hash) Put(e *store.Entry, ops ...store.PutOption) (bool, error) {
+func (h *Backend) Put(e *store.Entry, ops ...store.PutOption) (bool, error) {
 	opts := &store.PutOptions{}
 
 	for _, op := range ops {
@@ -260,7 +260,7 @@ func (h *Hash) Put(e *store.Entry, ops ...store.PutOption) (bool, error) {
 // Del an entry from the store
 // WithPrefix is supported
 // WithContext will be ignored
-func (h *Hash) Del(key string, ops ...store.DelOption) (int64, error) {
+func (h *Backend) Del(key string, ops ...store.DelOption) (int64, error) {
 	var count int64
 
 	opts := &store.DelOptions{}
@@ -288,7 +288,7 @@ func (h *Hash) Del(key string, ops ...store.DelOption) (int64, error) {
 	return count, nil
 }
 
-func (h *Hash) del(e store.Entry) {
+func (h *Backend) del(e store.Entry) {
 	absKey := h.AbsKey(e.Key)
 
 	h.Lock()
@@ -302,6 +302,6 @@ func (h *Hash) del(e store.Entry) {
 
 // Close exists to implement the store interface, there
 // is no connection to close.
-func (h *Hash) Close() error {
+func (h *Backend) Close() error {
 	return nil
 }

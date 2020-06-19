@@ -26,42 +26,42 @@ func TestKeyFunctions(t *testing.T) {
 	t.Run("absolute key", func(t *testing.T) {
 		h, err := hash.New(hash.WithPrefix(prefix))
 		assert.NoError(t, err)
-		assert.Equal(t, h.(*hash.Hash).AbsKey(relkey), abskey)
+		assert.Equal(t, h.AbsKey(relkey), abskey)
 		assert.NoError(t, h.Close())
 	})
 
 	t.Run("absolute key from key with leading separator", func(t *testing.T) {
 		h, err := hash.New(hash.WithPrefix(prefix))
 		assert.NoError(t, err)
-		assert.NotEqual(t, h.(*hash.Hash).AbsKey("/"+relkey), abskey)
+		assert.NotEqual(t, h.AbsKey("/"+relkey), abskey)
 		assert.NoError(t, h.Close())
 	})
 
 	t.Run("relative key", func(t *testing.T) {
 		h, err := hash.New(hash.WithPrefix(prefix))
 		assert.NoError(t, err)
-		assert.Equal(t, h.(*hash.Hash).RelKey(abskey), relkey)
+		assert.Equal(t, h.RelKey(abskey), relkey)
 		assert.NoError(t, h.Close())
 	})
 
 	t.Run("join key", func(t *testing.T) {
 		h, err := hash.New(hash.WithPrefix(prefix))
 		assert.NoError(t, err)
-		assert.Equal(t, h.(*hash.Hash).JoinKey(middle, suffix), relkey)
+		assert.Equal(t, h.JoinKey(middle, suffix), relkey)
 		assert.NoError(t, h.Close())
 	})
 
 	t.Run("split key", func(t *testing.T) {
 		h, err := hash.New(hash.WithPrefix(prefix))
 		assert.NoError(t, err)
-		assert.Equal(t, h.(*hash.Hash).SplitKey(relkey), []string{middle, suffix})
+		assert.Equal(t, h.SplitKey(relkey), []string{middle, suffix})
 		assert.NoError(t, h.Close())
 	})
 
 	t.Run("split key", func(t *testing.T) {
 		h, err := hash.New(hash.WithPrefix(prefix))
 		assert.NoError(t, err)
-		assert.Equal(t, h.(*hash.Hash).KeyLeaf(relkey), suffix)
+		assert.Equal(t, h.KeyLeaf(relkey), suffix)
 		assert.NoError(t, h.Close())
 	})
 }
@@ -391,7 +391,7 @@ func TestMarshal(t *testing.T) {
 	}
 }
 
-func TestHashWithTTL(t *testing.T) {
+func TestBackendWithTTL(t *testing.T) {
 	for _, p := range []string{"", "root"} {
 		opts := []hash.Opt{hash.WithTTL(10 * time.Millisecond)}
 		if p != "" {
