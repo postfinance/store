@@ -9,8 +9,8 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 
-	"git.pnet.ch/golang/pkg/store"
-	"git.pnet.ch/golang/pkg/store/hash"
+	"github.com/postfinance/store"
+	"github.com/postfinance/store/hash"
 )
 
 // nolint: gochecknoglobals

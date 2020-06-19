@@ -9,7 +9,7 @@ import (
 	"io/ioutil"
 	"time"
 
-	"git.pnet.ch/golang/pkg/store"
+	"github.com/postfinance/store"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"

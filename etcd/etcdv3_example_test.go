@@ -3,7 +3,7 @@ package etcd_test
 import (
 	"log"
 
-	"git.pnet.ch/golang/pkg/store/etcd"
+	"github.com/postfinance/store/etcd"
 	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
 	"github.com/pkg/errors"
 	"google.golang.org/grpc"

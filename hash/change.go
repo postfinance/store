@@ -1,6 +1,6 @@
 package hash
 
-import "git.pnet.ch/golang/pkg/store"
+import "github.com/postfinance/store"
 
 // Constants
 const (

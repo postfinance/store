@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"git.pnet.ch/golang/pkg/store"
-	"git.pnet.ch/golang/pkg/store/hash"
+	"github.com/postfinance/store"
+	"github.com/postfinance/store/hash"
 	"github.com/stretchr/testify/require"
 )
 
@@ -40,7 +40,7 @@ func init() {
 go test -bench . -benchtime=10s
 goos: linux
 goarch: amd64
-pkg: git.pnet.ch/golang/pkg/store/hash
+pkg: github.com/postfinance/store/hash
 BenchmarkUnmarshal100-4            30000            583465 ns/op           81328 B/op       1024 allocs/op
 BenchmarkIterate100-4              30000            652154 ns/op           81328 B/op       1024 allocs/op
 BenchmarkHandler100-4              30000            489527 ns/op           79736 B/op        832 allocs/op
@@ -54,7 +54,7 @@ BenchmarkUnmarshal100000-4            20         731059321 ns/op        10947073
 BenchmarkIterate100000-4              20         736711026 ns/op        109470740 B/op   1000070 allocs/op
 BenchmarkHandler100000-4              20         746221662 ns/op        118637666 B/op    800099 allocs/op
 PASS
-ok      git.pnet.ch/golang/pkg/store/hash       227.357s
+ok      github.com/postfinance/store/hash       227.357s
 */
 
 func BenchmarkUnmarshal100(b *testing.B)    { benchmarkUnmarshal(100, b) }

@@ -1,4 +1,4 @@
-module git.pnet.ch/golang/pkg/store
+module github.com/postfinance/store
 
 go 1.14
 

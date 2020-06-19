@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"time"
 
-	"git.pnet.ch/golang/pkg/store"
+	"github.com/postfinance/store"
 
 	"github.com/pkg/errors"
 )

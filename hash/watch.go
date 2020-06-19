@@ -4,7 +4,7 @@ import (
 	"context"
 	"fmt"
 
-	"git.pnet.ch/golang/pkg/store"
+	"github.com/postfinance/store"
 )
 
 // Watch a key or prefix

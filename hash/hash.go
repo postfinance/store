@@ -10,7 +10,7 @@ import (
 	"sync"
 	"time"
 
-	"git.pnet.ch/golang/pkg/store"
+	"github.com/postfinance/store"
 )
 
 // entry in the hash map
