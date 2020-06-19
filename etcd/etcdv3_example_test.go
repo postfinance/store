@@ -3,9 +3,9 @@ package etcd_test
 import (
 	"log"
 
-	"github.com/postfinance/store/etcd"
 	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
 	"github.com/pkg/errors"
+	"github.com/postfinance/store/etcd"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"

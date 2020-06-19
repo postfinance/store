@@ -9,9 +9,9 @@ import (
 	"io/ioutil"
 	"time"
 
-	"github.com/postfinance/store"
 	"github.com/coreos/etcd/clientv3"
 	"github.com/pkg/errors"
+	"github.com/postfinance/store"
 	"google.golang.org/grpc"
 )
 
