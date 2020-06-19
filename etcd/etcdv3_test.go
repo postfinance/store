@@ -33,37 +33,37 @@ func TestKeyFunctions(t *testing.T) {
 	t.Run("absolute key", func(t *testing.T) {
 		b, err := New(WithClient(cli), WithPrefix(prefix))
 		assert.NoError(t, err)
-		assert.Equal(t, b.(*Backend).AbsKey(relkey), abskey)
+		assert.Equal(t, b.AbsKey(relkey), abskey)
 	})
 
 	t.Run("absolute key from key with leading separator", func(t *testing.T) {
 		b, err := New(WithClient(cli), WithPrefix(prefix))
 		assert.NoError(t, err)
-		assert.NotEqual(t, b.(*Backend).AbsKey("/"+relkey), abskey)
+		assert.NotEqual(t, b.AbsKey("/"+relkey), abskey)
 	})
 
 	t.Run("relative key", func(t *testing.T) {
 		b, err := New(WithClient(cli), WithPrefix(prefix))
 		assert.NoError(t, err)
-		assert.Equal(t, b.(*Backend).RelKey(abskey), relkey)
+		assert.Equal(t, b.RelKey(abskey), relkey)
 	})
 
 	t.Run("join key", func(t *testing.T) {
 		b, err := New(WithClient(cli), WithPrefix(prefix))
 		assert.NoError(t, err)
-		assert.Equal(t, b.(*Backend).JoinKey(middle, suffix), relkey)
+		assert.Equal(t, b.JoinKey(middle, suffix), relkey)
 	})
 
 	t.Run("split key", func(t *testing.T) {
 		b, err := New(WithClient(cli), WithPrefix(prefix))
 		assert.NoError(t, err)
-		assert.Equal(t, b.(*Backend).SplitKey(relkey), []string{middle, suffix})
+		assert.Equal(t, b.SplitKey(relkey), []string{middle, suffix})
 	})
 
 	t.Run("split key", func(t *testing.T) {
 		b, err := New(WithClient(cli), WithPrefix(prefix))
 		assert.NoError(t, err)
-		assert.Equal(t, b.(*Backend).KeyLeaf(relkey), suffix)
+		assert.Equal(t, b.KeyLeaf(relkey), suffix)
 	})
 }
 

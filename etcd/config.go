@@ -20,9 +20,12 @@ const (
 	DfltSeparator = '/'
 )
 
+// verify that *Backend implements store.Backend
+var _ store.Backend = &Backend{}
+
 // New configures a new etcd backend. At least Withclientv3 or WithEndoints option
 // has to be used.
-func New(opts ...Opt) (store.Backend, error) {
+func New(opts ...Opt) (*Backend, error) {
 	e := Backend{
 		separator:  DfltSeparator,
 		errHandler: func(err error) error { return err },

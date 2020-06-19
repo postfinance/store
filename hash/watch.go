@@ -9,7 +9,7 @@ import (
 
 // Watch a key or prefix
 // WithPrefix, WithContext, WithNotifyCreated, WithErrorHandler are supported
-func (h *Hash) Watch(key string, w store.Watcher, ops ...store.WatchOption) error {
+func (h *Backend) Watch(key string, w store.Watcher, ops ...store.WatchOption) error {
 	opts := &store.WatchOptions{}
 
 	for _, op := range ops {
