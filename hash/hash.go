@@ -20,7 +20,7 @@ type entry struct {
 	TTL     time.Duration
 }
 
-// Backend table backend
+// Backend hash backend
 type Backend struct {
 	sync.RWMutex
 	prefix          string
@@ -239,6 +239,8 @@ func (h *Backend) Put(e *store.Entry, ops ...store.PutOption) (bool, error) {
 		ttl = opts.TTL
 	}
 
+	// keep-alive
+
 	// Insert/Update the entry
 	absKey := h.AbsKey(e.Key)
 
@@ -305,3 +307,8 @@ func (h *Backend) del(e store.Entry) {
 func (h *Backend) Close() error {
 	return nil
 }
+
+// ensure the hash.Backend implements the necessary interfaces
+var _ store.Backend = &Backend{}
+
+var _ store.BackendKeyer = &Backend{}

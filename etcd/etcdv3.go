@@ -4,6 +4,7 @@ package etcd
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"reflect"
 	"strings"
 	"time"
@@ -96,8 +97,13 @@ func (e *Backend) Put(entry *store.Entry, ops ...store.PutOption) (bool, error) 
 
 	etcdOpts := []clientv3.OpOption{}
 
+	// TODO keepAlive needs ttl
+
+	var lease *clientv3.LeaseGrantResponse
+
 	if opts.TTL > 0 {
-		lease, err := e.client.Grant(ctx, int64(opts.TTL.Seconds()))
+		var err error
+		lease, err = e.client.Grant(ctx, int64(opts.TTL.Seconds()))
 		if e.errHandler(err) != nil {
 			return false, errors.New("could not get lease with ttl")
 		}
@@ -134,6 +140,32 @@ func (e *Backend) Put(entry *store.Entry, ops ...store.PutOption) (bool, error) 
 		Commit()
 	if e.errHandler(err) != nil {
 		return false, err
+	}
+
+	if opts.ErrChan != nil {
+		ctx := context.Background()
+		if opts.KeepAliveContext != nil {
+			ctx = opts.KeepAliveContext
+		}
+		// start keep-alive
+		ch, err := e.client.KeepAlive(ctx, lease.ID)
+		if err != nil {
+			return !resp.Succeeded, err
+		}
+		// start keep-alive monitor
+		go func() {
+			for {
+				select {
+				case <-ctx.Done():
+					return
+				case _, ok := <-ch:
+					if !ok {
+						opts.ErrChan <- fmt.Errorf("keepalive response channel has been closed")
+						return
+					}
+				}
+			}
+		}()
 	}
 
 	return !resp.Succeeded, err
@@ -285,3 +317,8 @@ func (e *Backend) valid() error {
 
 	return nil
 }
+
+// ensure the etcd.Backend implements the necessary interfaces
+var _ store.Backend = &Backend{}
+
+var _ store.BackendKeyer = &Backend{}
