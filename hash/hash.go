@@ -239,7 +239,7 @@ func (h *Backend) Put(e *store.Entry, ops ...store.PutOption) (bool, error) {
 		ttl = opts.TTL
 	}
 
-	// keep-alive
+	// TODO: keep-alive
 
 	// Insert/Update the entry
 	absKey := h.AbsKey(e.Key)

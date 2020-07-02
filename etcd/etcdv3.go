@@ -97,7 +97,7 @@ func (e *Backend) Put(entry *store.Entry, ops ...store.PutOption) (bool, error) 
 
 	etcdOpts := []clientv3.OpOption{}
 
-	// TODO keepAlive needs ttl
+	// TODO: keepAlive needs ttl
 
 	var lease *clientv3.LeaseGrantResponse
 
@@ -142,11 +142,13 @@ func (e *Backend) Put(entry *store.Entry, ops ...store.PutOption) (bool, error) 
 		return false, err
 	}
 
+	// TODO: add tests for keepalive
 	if opts.ErrChan != nil {
+
 		ctx := context.Background()
-		if opts.KeepAliveContext != nil {
-			ctx = opts.KeepAliveContext
-		}
+		// if opts.KeepAliveContext != nil {
+		// 	ctx = opts.KeepAliveContext
+		// }
 		// start keep-alive
 		ch, err := e.client.KeepAlive(ctx, lease.ID)
 		if err != nil {
