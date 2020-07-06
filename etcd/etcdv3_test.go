@@ -82,7 +82,7 @@ func TestGet(t *testing.T) {
 			e, err := b.Get("key1")
 			require.Error(t, err)
 			assert.Equal(t, store.ErrKeyNotFound, err)
-			assert.Len(t, e, 0)
+			assert.Empty(t, e)
 		})
 
 		expEntries, err := createEntries(10, b.(*Backend), cli)
@@ -194,6 +194,7 @@ func TestGet(t *testing.T) {
 	}
 }
 
+// nolint: funlen
 func TestPut(t *testing.T) {
 	for _, p := range []string{"", "root"} {
 		opts := []Opt{}
@@ -263,16 +264,16 @@ func TestPut(t *testing.T) {
 		t.Run("put with ttl", func(t *testing.T) {
 			entry := &entries[2]
 			ok, err := b.Put(entry, store.WithTTL(1*time.Second))
-			assert.NoError(t, err)
-			assert.True(t, ok)
+			require.NoError(t, err)
+			require.True(t, ok)
 			r, err := cli.Get(context.Background(), b.(*Backend).AbsKey(entry.Key))
 			require.NoError(t, err)
 			require.NotEmpty(t, r.Kvs)
-			assert.Equal(t, entry.Value, r.Kvs[0].Value)
+			require.Equal(t, entry.Value, r.Kvs[0].Value)
 			time.Sleep(1500 * time.Millisecond)
-			r, err = cli.Get(context.Background(), entry.Key)
+			r, err = cli.Get(context.Background(), b.(*Backend).AbsKey(entry.Key))
 			require.NoError(t, err)
-			assert.Len(t, r.Kvs, 0)
+			assert.Empty(t, r.Kvs)
 		})
 
 		t.Run("put with timeout", func(t *testing.T) {
@@ -281,7 +282,7 @@ func TestPut(t *testing.T) {
 			e.RequestTimeout = 1
 			defer func(to time.Duration) { e.RequestTimeout = to }(0)
 			_, err := b.Put(entry)
-			require.Equal(t, context.DeadlineExceeded, err)
+			assert.Equal(t, context.DeadlineExceeded, err)
 		})
 
 		t.Run("put with context", func(t *testing.T) {
@@ -289,7 +290,55 @@ func TestPut(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			cancel()
 			_, err := b.Put(entry, store.WithContext(ctx))
-			require.Equal(t, err, context.Canceled)
+			assert.Equal(t, err, context.Canceled)
+		})
+
+		t.Run("put with keep-alive and cancel", func(t *testing.T) {
+			entry := &entries[5]
+			ech := make(chan error)
+			ctx, cancel := context.WithCancel(context.Background())
+			ok, err := b.Put(entry,
+				store.WithContext(ctx),
+				store.WithKeepAlive(ech),
+			)
+			require.NoError(t, err)
+			require.True(t, ok)
+			cancel()
+			e := <-ech
+			// can't predict which error is first read by select
+			assert.True(t, e == context.Canceled || e == store.ErrResponseChannelClosed)
+			// entry still exists because default TTL is 30s
+			r, err := cli.Get(context.Background(), b.(*Backend).AbsKey(entry.Key))
+			require.NoError(t, err)
+			require.NotEmpty(t, r.Kvs)
+		})
+
+		t.Run("put with keep-alive and wait", func(t *testing.T) {
+			entry := &entries[6]
+			ech := make(chan error)
+			ctx, cancel := context.WithCancel(context.Background())
+			ok, err := b.Put(entry,
+				store.WithContext(ctx),
+				store.WithTTL(1*time.Second),
+				store.WithKeepAlive(ech),
+			)
+			require.NoError(t, err)
+			require.True(t, ok)
+			// after TTL is expired the entry should still exist
+			time.Sleep(1500 * time.Millisecond)
+			r, err := cli.Get(context.Background(), b.(*Backend).AbsKey(entry.Key))
+			require.NoError(t, err)
+			require.NotEmpty(t, r.Kvs)
+			// cancel the keep-alive
+			cancel()
+			e := <-ech
+			// can't predict which error is first read by select
+			assert.True(t, e == context.Canceled || e == store.ErrResponseChannelClosed)
+			// after TTL is expired the entry should no longer exist
+			time.Sleep(1500 * time.Millisecond)
+			r, err = cli.Get(context.Background(), b.(*Backend).AbsKey(entry.Key))
+			require.NoError(t, err)
+			assert.Empty(t, r.Kvs)
 		})
 	}
 }

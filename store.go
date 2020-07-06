@@ -5,6 +5,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"reflect"
 	"time"
 )
@@ -12,6 +13,8 @@ import (
 var (
 	// ErrKeyNotFound is returned when key was not found.
 	ErrKeyNotFound = errors.New("key not found")
+	// ErrResponseChannelClosed will be returned if the response channel of the keep-alive is closed
+	ErrResponseChannelClosed = fmt.Errorf("keepalive response channel has been closed")
 )
 
 // HandlerFunc is a function that is called on (each) returned

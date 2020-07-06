@@ -4,7 +4,6 @@ package etcd
 import (
 	"context"
 	"encoding/json"
-	"fmt"
 	"reflect"
 	"strings"
 	"time"
@@ -83,13 +82,14 @@ func (e *Backend) KeyLeaf(key string) string {
 }
 
 // Put is used to insert or update an entry
+// nolint: gocyclo
 func (e *Backend) Put(entry *store.Entry, ops ...store.PutOption) (bool, error) {
 	opts := &store.PutOptions{}
 
 	for _, op := range ops {
 		op.SetPutOption(opts)
 	}
-	// use background context if no context is given
+	// use the background context if no context is given
 	ctx := context.Background()
 	if opts.Context != nil {
 		ctx = opts.Context
@@ -97,12 +97,16 @@ func (e *Backend) Put(entry *store.Entry, ops ...store.PutOption) (bool, error) 
 
 	etcdOpts := []clientv3.OpOption{}
 
-	// TODO: keepAlive needs ttl
-
 	var lease *clientv3.LeaseGrantResponse
+
+	// TTL must be set for KeepAlive
+	if opts.TTL == 0 && opts.ErrChan != nil {
+		opts.TTL = DfltKeepAliveTTL
+	}
 
 	if opts.TTL > 0 {
 		var err error
+
 		lease, err = e.client.Grant(ctx, int64(opts.TTL.Seconds()))
 		if e.errHandler(err) != nil {
 			return false, errors.New("could not get lease with ttl")
@@ -142,13 +146,8 @@ func (e *Backend) Put(entry *store.Entry, ops ...store.PutOption) (bool, error) 
 		return false, err
 	}
 
-	// TODO: add tests for keepalive
+	// start keep-alive and keep-alive monitor
 	if opts.ErrChan != nil {
-
-		ctx := context.Background()
-		// if opts.KeepAliveContext != nil {
-		// 	ctx = opts.KeepAliveContext
-		// }
 		// start keep-alive
 		ch, err := e.client.KeepAlive(ctx, lease.ID)
 		if err != nil {
@@ -159,10 +158,13 @@ func (e *Backend) Put(entry *store.Entry, ops ...store.PutOption) (bool, error) 
 			for {
 				select {
 				case <-ctx.Done():
+					opts.ErrChan <- context.Canceled
+
 					return
 				case _, ok := <-ch:
 					if !ok {
-						opts.ErrChan <- fmt.Errorf("keepalive response channel has been closed")
+						opts.ErrChan <- store.ErrResponseChannelClosed
+
 						return
 					}
 				}

@@ -3,6 +3,7 @@ package hash
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"reflect"
 	"sort"
@@ -219,6 +220,11 @@ func (h *Backend) Put(e *store.Entry, ops ...store.PutOption) (bool, error) {
 	for _, op := range ops {
 		op.SetPutOption(opts)
 	}
+	// use the background context if no context is given
+	ctx := context.Background()
+	if opts.Context != nil {
+		ctx = opts.Context
+	}
 
 	// Get entry
 	entries, err := h.Get(e.Key)
@@ -233,13 +239,16 @@ func (h *Backend) Put(e *store.Entry, ops ...store.PutOption) (bool, error) {
 		v = entries[0]
 	}
 
+	// TTL must be set for KeepAlive
+	if opts.TTL == 0 && opts.ErrChan != nil {
+		opts.TTL = DfltKeepAliveTTL
+	}
+
 	// WithTTL will overwrite the default ttl
 	ttl := h.ttl
 	if opts.TTL > 0 {
 		ttl = opts.TTL
 	}
-
-	// TODO: keep-alive
 
 	// Insert/Update the entry
 	absKey := h.AbsKey(e.Key)
@@ -251,12 +260,57 @@ func (h *Backend) Put(e *store.Entry, ops ...store.PutOption) (bool, error) {
 		TTL:     ttl,
 	}
 	h.Unlock()
+
 	h.notify(absKey, changeNotification{
 		Type: put,
 		Data: *e,
 	})
 
+	// keep-alive
+	if opts.ErrChan != nil {
+		go func() {
+			ticker := time.NewTicker(opts.TTL / 2)
+
+			for {
+				select {
+				case <-ctx.Done():
+					// get a full TTL before delete
+					_ = h.keepAlive(e.Key)
+					opts.ErrChan <- context.Canceled
+
+					return
+				case <-ticker.C:
+					// if the key does no longer exist
+					// stop the monitor and act like etcd
+					if err := h.keepAlive(e.Key); err != nil {
+						opts.ErrChan <- store.ErrResponseChannelClosed
+
+						return
+					}
+				}
+			}
+		}()
+	}
+
 	return len(e.Value) == 0 || !bytes.Equal(v.Value, e.Value), nil
+}
+
+func (h *Backend) keepAlive(key string) error {
+	// Insert/Update the entry
+	absKey := h.AbsKey(key)
+
+	h.Lock()
+	defer h.Unlock()
+
+	e, ok := h.data[absKey]
+	if !ok {
+		return store.ErrKeyNotFound
+	}
+
+	e.Updated = time.Now()
+	h.data[absKey] = e
+
+	return nil
 }
 
 // Del an entry from the store

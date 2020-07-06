@@ -17,7 +17,8 @@ import (
 
 // Constants
 const (
-	DfltSeparator = '/'
+	DfltSeparator    = '/'
+	DfltKeepAliveTTL = 30 * time.Second
 )
 
 // verify that *Backend implements store.Backend

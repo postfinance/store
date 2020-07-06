@@ -75,15 +75,23 @@ func TestPutOptions(t *testing.T) {
 		store.WithInsert().SetPutOption(opts)
 		assert.True(t, opts.Insert)
 	})
+
 	t.Run("WithTTL", func(t *testing.T) {
 		opts := &store.PutOptions{}
 		store.WithTTL(1).SetPutOption(opts)
 		assert.EqualValues(t, opts.TTL, 1)
 	})
+
 	t.Run("WithContext", func(t *testing.T) {
 		opts := &store.PutOptions{}
 		store.WithContext(context.Background()).SetPutOption(opts)
 		assert.NotNil(t, opts.Context)
+	})
+
+	t.Run("", func(t *testing.T) {
+		opts := &store.PutOptions{}
+		store.WithKeepAlive(make(chan error)).SetPutOption(opts)
+		assert.NotNil(t, opts.ErrChan)
 	})
 }
 
@@ -93,6 +101,7 @@ func TestDelOptions(t *testing.T) {
 		store.WithPrefix().SetDelOption(opts)
 		assert.True(t, opts.Prefix)
 	})
+
 	t.Run("WithContext", func(t *testing.T) {
 		opts := &store.DelOptions{}
 		store.WithContext(context.Background()).SetDelOption(opts)
