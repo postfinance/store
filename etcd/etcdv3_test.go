@@ -319,13 +319,13 @@ func TestPut(t *testing.T) {
 			ctx, cancel := context.WithCancel(context.Background())
 			ok, err := b.Put(entry,
 				store.WithContext(ctx),
-				store.WithTTL(1*time.Second),
+				store.WithTTL(2*time.Second),
 				store.WithKeepAlive(ech),
 			)
 			require.NoError(t, err)
 			require.True(t, ok)
 			// after TTL is expired the entry should still exist
-			time.Sleep(1500 * time.Millisecond)
+			time.Sleep(4 * time.Second)
 			r, err := cli.Get(context.Background(), b.(*Backend).AbsKey(entry.Key))
 			require.NoError(t, err)
 			require.NotEmpty(t, r.Kvs)
@@ -335,7 +335,7 @@ func TestPut(t *testing.T) {
 			// can't predict which error is first read by select
 			assert.True(t, e == context.Canceled || e == store.ErrResponseChannelClosed)
 			// after TTL is expired the entry should no longer exist
-			time.Sleep(1500 * time.Millisecond)
+			time.Sleep(4 * time.Second)
 			r, err = cli.Get(context.Background(), b.(*Backend).AbsKey(entry.Key))
 			require.NoError(t, err)
 			assert.Empty(t, r.Kvs)
