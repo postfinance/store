@@ -70,8 +70,8 @@ func (e *Backend) Health(key string) []Status {
 			defer wg.Done()
 
 			start := time.Now()
-			// get a random key. As long as we can get the response without an error, the
-			// endpoint is health.
+			// Get a random key.
+			// As long as we can get the response without an error, the endpoint is health.
 			timeout := dfltTimeout
 			if e.RequestTimeout > 0 {
 				timeout = e.RequestTimeout
@@ -80,7 +80,7 @@ func (e *Backend) Health(key string) []Status {
 			ctx, cancel := context.WithTimeout(context.Background(), timeout)
 			defer cancel()
 
-			_, nerr := s.cli.Get(ctx, key)
+			_, nerr := s.cli.Get(ctx, e.AbsKey(key))
 			if nerr != nil {
 				s.Detail = fmt.Sprintf("%s is unhealthy: failed commit proposal: %v", s.Endpoint, nerr)
 			} else {

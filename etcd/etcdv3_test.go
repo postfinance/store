@@ -76,7 +76,6 @@ func TestGet(t *testing.T) {
 		}
 
 		b, cli, teardown := setupTestStore(t, false, opts)
-		defer teardown()
 
 		t.Run("key not found", func(t *testing.T) {
 			e, err := b.Get("key1")
@@ -191,6 +190,8 @@ func TestGet(t *testing.T) {
 			_, err := b.Get("key0", store.WithContext(ctx))
 			require.Equal(t, err, context.Canceled)
 		})
+
+		teardown()
 	}
 }
 
@@ -203,7 +204,6 @@ func TestPut(t *testing.T) {
 		}
 
 		b, cli, teardown := setupTestStore(t, false, opts)
-		defer teardown()
 
 		entries, err := createEntries(10, nil, nil)
 		require.NoError(t, err)
@@ -340,6 +340,8 @@ func TestPut(t *testing.T) {
 			require.NoError(t, err)
 			assert.Empty(t, r.Kvs)
 		})
+
+		teardown()
 	}
 }
 
@@ -351,7 +353,6 @@ func TestDel(t *testing.T) {
 		}
 
 		b, cli, teardown := setupTestStore(t, false, opts)
-		defer teardown()
 
 		expEntries, err := createEntries(10, b.(*Backend), cli)
 		require.NoError(t, err)
@@ -404,6 +405,8 @@ func TestDel(t *testing.T) {
 			require.NoError(t, err)
 			require.Len(t, r.Kvs, 0)
 		})
+
+		teardown()
 	}
 }
 
@@ -415,7 +418,6 @@ func TestMarshal(t *testing.T) {
 		}
 
 		b, _, teardown := setupTestStore(t, false, opts)
-		defer teardown()
 
 		type testStruct struct {
 			Value1 string
@@ -438,6 +440,8 @@ func TestMarshal(t *testing.T) {
 		}))
 		require.NoError(t, err)
 		assert.EqualValues(t, exp, actual)
+
+		teardown()
 	}
 }
 
@@ -449,7 +453,6 @@ func TestMarshal2(t *testing.T) {
 		}
 
 		b, _, teardown := setupTestStore(t, false, opts)
-		defer teardown()
 
 		type testStruct struct {
 			Value1 string
@@ -469,6 +472,8 @@ func TestMarshal2(t *testing.T) {
 		bla := []testStruct{}
 		err = store.UnmarshalJSONList(&bla, key, b)
 		require.NoError(t, err)
+
+		teardown()
 	}
 }
 
@@ -481,12 +486,12 @@ If log is true, the integrated server logs output to stdout.
 This can be used in integration tests as follows:
 
 	func TestSomething(m *testing.M) {
-		b, s, teardown := SetupTestStore(t, false. []Opt{})
+		b, s, teardown := setupTestStore(t, false. []Opt{})
 		defer teardown()
 	}
 */
 // nolint: unparam // `log` always receives `false` (unparam)
-func setupTestStore(t *testing.T, log bool, opts []Opt) (store.Backend, *clientv3.Client, func()) {
+func setupTestStore(t *testing.T, log bool, opts []Opt) (store.BackendKeyer, *clientv3.Client, func()) {
 	if !log {
 		capnslog.SetGlobalLogLevel(capnslog.ERROR)
 	}

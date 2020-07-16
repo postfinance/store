@@ -42,7 +42,7 @@ func (e *Backend) Watch(key string, w store.Watcher, ops ...store.WatchOption) e
 		etcdOpts = append(etcdOpts, clientv3.WithPrefix())
 	}
 
-	rch := e.client.Watch(clientv3.WithRequireLeader(wCtx), key, etcdOpts...)
+	rch := e.client.Watch(clientv3.WithRequireLeader(wCtx), e.AbsKey(key), etcdOpts...)
 
 	// wait until the Watch is created or timeout exceeded
 	if err := func() error {
@@ -54,7 +54,7 @@ func (e *Backend) Watch(key string, w store.Watcher, ops ...store.WatchOption) e
 		select {
 		case resp := <-rch:
 			if !resp.Created {
-				return fmt.Errorf("expected created event, got %v", resp)
+				return fmt.Errorf("watch not created")
 			}
 		case <-tCtx.Done():
 			return fmt.Errorf("watch not created, timeout of %v exceeded", timeout)
@@ -100,11 +100,13 @@ func (e *Backend) Watch(key string, w store.Watcher, ops ...store.WatchOption) e
 			}
 
 			for _, ev := range wresp.Events {
+				key := []byte(e.RelKey(string(ev.Kv.Key)))
+
 				switch ev.Type.String() {
 				case "PUT":
-					_ = handleError(w.OnPut(ev.Kv.Key, ev.Kv.Value))
+					_ = handleError(w.OnPut(key, ev.Kv.Value))
 				case "DELETE":
-					_ = handleError(w.OnDelete(ev.Kv.Key, ev.Kv.Value))
+					_ = handleError(w.OnDelete(key, ev.Kv.Value))
 				default:
 					_ = handleError(fmt.Errorf("watch received an unknown event type: %s", ev.Type.String()))
 				}

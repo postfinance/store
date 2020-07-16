@@ -45,11 +45,13 @@ func (h *Backend) Watch(key string, w store.Watcher, ops ...store.WatchOption) e
 
 	// loop is here a registered callback
 	h.register(h.AbsKey(key), opts.Prefix, func(msg changeNotification) {
+		key := []byte(h.RelKey(msg.Data.Key))
+
 		switch msg.Type {
 		case put:
-			_ = handleError(w.OnPut([]byte(msg.Data.Key), msg.Data.Value))
+			_ = handleError(w.OnPut(key, msg.Data.Value))
 		case del:
-			_ = handleError(w.OnDelete([]byte(msg.Data.Key), msg.Data.Value))
+			_ = handleError(w.OnDelete(key, msg.Data.Value))
 		default:
 			_ = handleError(fmt.Errorf("watch received an unknown event type: %s", msg.Type))
 		}
