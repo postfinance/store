@@ -71,7 +71,7 @@ func (e *Backend) Health(key string) []Status {
 
 			start := time.Now()
 			// Get a random key.
-			// As long as we can get the response without an error, the endpoint is health.
+			// As long as we can get the response without an error, the endpoint is healthy.
 			timeout := dfltTimeout
 			if e.RequestTimeout > 0 {
 				timeout = e.RequestTimeout
