@@ -85,7 +85,7 @@ func TestGet(t *testing.T) {
 			e, err := b.Get("key1")
 			assert.Error(t, err)
 			assert.Equal(t, store.ErrKeyNotFound, err)
-			assert.Len(t, e, 0)
+			assert.Empty(t, e)
 		})
 
 		expEntries, err := createEntries(10, b)
@@ -291,7 +291,7 @@ func TestPut(t *testing.T) {
 
 			r, err = b.Get(entry.Key)
 			require.Error(t, store.ErrKeyNotFound, err)
-			assert.Len(t, r, 0)
+			assert.Empty(t, r)
 		})
 
 		t.Run("put with context", func(t *testing.T) {
@@ -300,6 +300,51 @@ func TestPut(t *testing.T) {
 			cancel() // doesn't matter, context will be ignored
 			_, err := b.Put(entry, store.WithContext(ctx))
 			require.NoError(t, err)
+		})
+
+		t.Run("put with keep-alive and cancel", func(t *testing.T) {
+			entry := &entries[5]
+			ech := make(chan error)
+			ctx, cancel := context.WithCancel(context.Background())
+			ok, err := b.Put(entry,
+				store.WithContext(ctx),
+				store.WithKeepAlive(ech),
+			)
+			require.NoError(t, err)
+			require.True(t, ok)
+			cancel()
+			cancel()
+			assert.Equal(t, context.Canceled, <-ech)
+			// entry still exists because default TTL is 30s
+			r, err := b.Get(entry.Key)
+			require.NoError(t, err)
+			require.NotEmpty(t, r)
+		})
+
+		t.Run("put with keep-alive and wait", func(t *testing.T) {
+			entry := &entries[6]
+			ech := make(chan error)
+			ctx, cancel := context.WithCancel(context.Background())
+			ok, err := b.Put(entry,
+				store.WithContext(ctx),
+				store.WithTTL(1*time.Second),
+				store.WithKeepAlive(ech),
+			)
+			require.NoError(t, err)
+			require.True(t, ok)
+			// after TTL is expired the entry should still exist
+			time.Sleep(1500 * time.Millisecond)
+			r, err := b.Get(entry.Key)
+			require.NoError(t, err)
+			require.NotEmpty(t, r)
+			// cancel the keep-alive
+			cancel()
+			assert.Equal(t, context.Canceled, <-ech)
+			// after TTL is expired the entry should no longer exist
+			time.Sleep(1500 * time.Millisecond)
+			r, err = b.Get(entry.Key)
+			require.Equal(t, store.ErrKeyNotFound, err)
+			assert.Empty(t, r)
 		})
 	}
 }
@@ -423,7 +468,7 @@ func TestBackendWithTTL(t *testing.T) {
 
 			r, err = b.Get(entry.Key)
 			require.Equal(t, store.ErrKeyNotFound, err)
-			assert.Len(t, r, 0)
+			assert.Empty(t, r)
 		})
 
 		t.Run("put with ttl", func(t *testing.T) {

@@ -12,6 +12,8 @@ import (
 var (
 	// ErrKeyNotFound is returned when key was not found.
 	ErrKeyNotFound = errors.New("key not found")
+	// ErrResponseChannelClosed will be returned if the response channel of the keep-alive is closed
+	ErrResponseChannelClosed = errors.New("keepalive response channel has been closed")
 )
 
 // HandlerFunc is a function that is called on (each) returned
@@ -61,6 +63,16 @@ type Watcher interface {
 	OnDelete([]byte, []byte) error
 }
 
+// BackendKeyer interface extends Backend with key handling
+type BackendKeyer interface {
+	Backend
+	RelKey(k string) string
+	AbsKey(k string) string
+	JoinKey(args ...string) string
+	SplitKey(key string) []string
+	KeyLeaf(key string) string
+}
+
 // Entry is used to represent data stored by the physical backend
 type Entry struct {
 	Key   string
@@ -93,6 +105,7 @@ type GetOptions struct {
 type PutOptions struct {
 	Context context.Context
 	TTL     time.Duration
+	ErrChan chan<- error
 	Insert  bool
 }
 
@@ -158,6 +171,14 @@ func WithTTL(ttl time.Duration) interface {
 	PutOption
 } {
 	return &ttlOption{TTL: ttl}
+}
+
+// WithKeepAlive is an option to start a keep-alive for a key.
+// The keep-alive will only start if errChan != nil
+func WithKeepAlive(errChan chan<- error) interface {
+	PutOption
+} {
+	return &keepAliveOption{ErrChan: errChan}
 }
 
 // WithUnmarshal unmarshals the byte array in the store
@@ -270,6 +291,15 @@ type ttlOption struct {
 
 func (t *ttlOption) SetPutOption(opts *PutOptions) {
 	opts.TTL = t.TTL
+}
+
+// keepAlive
+type keepAliveOption struct {
+	ErrChan chan<- error
+}
+
+func (k *keepAliveOption) SetPutOption(opts *PutOptions) {
+	opts.ErrChan = k.ErrChan
 }
 
 // insert

@@ -82,13 +82,14 @@ func (e *Backend) KeyLeaf(key string) string {
 }
 
 // Put is used to insert or update an entry
+// nolint: gocyclo
 func (e *Backend) Put(entry *store.Entry, ops ...store.PutOption) (bool, error) {
 	opts := &store.PutOptions{}
 
 	for _, op := range ops {
 		op.SetPutOption(opts)
 	}
-	// use background context if no context is given
+	// use the background context if no context is given
 	ctx := context.Background()
 	if opts.Context != nil {
 		ctx = opts.Context
@@ -96,8 +97,17 @@ func (e *Backend) Put(entry *store.Entry, ops ...store.PutOption) (bool, error) 
 
 	etcdOpts := []clientv3.OpOption{}
 
+	var lease *clientv3.LeaseGrantResponse
+
+	// TTL must be set for KeepAlive
+	if opts.TTL == 0 && opts.ErrChan != nil {
+		opts.TTL = DfltKeepAliveTTL
+	}
+
 	if opts.TTL > 0 {
-		lease, err := e.client.Grant(ctx, int64(opts.TTL.Seconds()))
+		var err error
+
+		lease, err = e.client.Grant(ctx, int64(opts.TTL.Seconds()))
 		if e.errHandler(err) != nil {
 			return false, errors.New("could not get lease with ttl")
 		}
@@ -134,6 +144,32 @@ func (e *Backend) Put(entry *store.Entry, ops ...store.PutOption) (bool, error) 
 		Commit()
 	if e.errHandler(err) != nil {
 		return false, err
+	}
+
+	// start keep-alive and keep-alive monitor
+	if opts.ErrChan != nil {
+		// start keep-alive
+		ch, err := e.client.KeepAlive(ctx, lease.ID)
+		if err != nil {
+			return !resp.Succeeded, err
+		}
+		// start keep-alive monitor
+		go func() {
+			for {
+				select {
+				case <-ctx.Done():
+					opts.ErrChan <- context.Canceled
+
+					return
+				case _, ok := <-ch:
+					if !ok {
+						opts.ErrChan <- store.ErrResponseChannelClosed
+
+						return
+					}
+				}
+			}
+		}()
 	}
 
 	return !resp.Succeeded, err
@@ -285,3 +321,8 @@ func (e *Backend) valid() error {
 
 	return nil
 }
+
+// ensure the etcd.Backend implements the necessary interfaces
+var _ store.Backend = &Backend{}
+
+var _ store.BackendKeyer = &Backend{}

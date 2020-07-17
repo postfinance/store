@@ -16,9 +16,7 @@ func TestHealth(t *testing.T) {
 			if p != "" {
 				opts = append(opts, WithPrefix(p))
 			}
-
 			b, _, teardown := setupTestStore(t, false, opts)
-			defer teardown()
 
 			e, _ := b.(*Backend)
 			s := e.Health("key")
@@ -26,6 +24,8 @@ func TestHealth(t *testing.T) {
 			assert.True(t, len(s[0].Endpoint) > 0)
 			// flaky, sometimes works, sometimes not
 			// assert.True(t, s[0].Healthy, s[0].Detail)
+
+			teardown()
 		}
 	})
 

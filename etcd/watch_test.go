@@ -96,8 +96,7 @@ func TestWatch(t *testing.T) {
 			opts = append(opts, WithPrefix(p))
 		}
 
-		b, cli, teardown := setupTestStore(t, false, opts)
-		defer teardown()
+		b, _, teardown := setupTestStore(t, false, opts)
 
 		t.Run("watch key", func(t *testing.T) {
 			w := watcher{
@@ -124,11 +123,16 @@ func TestWatch(t *testing.T) {
 			}()
 			<-watchReady // wait for the channel created an test store.WithNotifyCreated()
 
-			_, err := cli.Put(context.Background(), testData[0].key, string(testData[0].value))
+			entry := store.Entry{
+				Key:   testData[0].key,
+				Value: testData[0].value,
+			}
+
+			_, err := b.Put(&entry)
 			require.NoError(t, err)
 			<-putDone
 
-			_, err = cli.Delete(context.Background(), testData[0].key)
+			_, err = b.Del(testData[0].key)
 			require.NoError(t, err)
 			<-delDone
 
@@ -163,11 +167,16 @@ func TestWatch(t *testing.T) {
 			}()
 			<-watchReady // wait for the channel created an test store.WithNotifyCreated()
 
-			_, err := cli.Put(context.Background(), testData[0].key, string(testData[0].value))
+			entry := store.Entry{
+				Key:   testData[0].key,
+				Value: testData[0].value,
+			}
+
+			_, err := b.Put(&entry)
 			require.NoError(t, err)
 			<-putDone
 
-			_, err = cli.Delete(context.Background(), testData[0].key)
+			_, err = b.Del(testData[0].key)
 			require.NoError(t, err)
 			<-delDone
 
@@ -209,7 +218,12 @@ func TestWatch(t *testing.T) {
 			}()
 			<-watchReady // wait for the channel created an test store.WithNotifyCreated()
 
-			_, err := cli.Put(context.Background(), testData[0].key, "error")
+			entry := store.Entry{
+				Key:   testData[0].key,
+				Value: []byte("error"),
+			}
+
+			_, err := b.Put(&entry)
 			require.NoError(t, err)
 			<-putDone
 
@@ -226,5 +240,7 @@ func TestWatch(t *testing.T) {
 			<-watchDone
 			assert.Equal(t, 7, watcherCheckCount)
 		})
+
+		teardown()
 	}
 }
