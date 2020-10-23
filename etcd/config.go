@@ -402,7 +402,9 @@ func (s ssl) tlsConfig() (*tls.Config, error) {
 		}
 
 		if tlsConfig == nil {
-			tlsConfig = &tls.Config{}
+			tlsConfig = &tls.Config{
+				MinVersion: tls.VersionTLS12,
+			}
 		}
 
 		tlsConfig.RootCAs = caCertPool

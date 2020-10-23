@@ -170,7 +170,7 @@ func benchmarkHandler(max int, b *testing.B) {
 func randString(l int) string {
 	buf := make([]byte, l)
 	for i := 0; i < (l+1)/2; i++ {
-		buf[i] = byte(rand.Intn(256))
+		buf[i] = byte(rand.Intn(256)) // nolint: gosec // G404: Use of weak random number generator (math/rand instead of crypto/rand)
 	}
 
 	return fmt.Sprintf("%x", buf)[:l]
@@ -192,9 +192,9 @@ func generate(max int) []*A {
 			Name:     randString(16),
 			BirthDay: time.Now(),
 			Phone:    randString(10),
-			Siblings: rand.Intn(5),
-			Spouse:   rand.Intn(2) == 1,
-			Money:    rand.Float64(),
+			Siblings: rand.Intn(5),      // nolint: gosec // G404: Use of weak random number generator (math/rand instead of crypto/rand)
+			Spouse:   rand.Intn(2) == 1, // nolint: gosec // G404: Use of weak random number generator (math/rand instead of crypto/rand)
+			Money:    rand.Float64(),    // nolint: gosec // G404: Use of weak random number generator (math/rand instead of crypto/rand)
 		})
 	}
 
