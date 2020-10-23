@@ -1,6 +1,6 @@
 module github.com/postfinance/store
 
-go 1.14
+go 1.15
 
 require (
 	github.com/coreos/bbolt v1.3.3 // indirect
