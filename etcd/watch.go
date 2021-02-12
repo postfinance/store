@@ -54,7 +54,7 @@ func (e *Backend) Watch(key string, w store.Watcher, ops ...store.WatchOption) e
 		select {
 		case resp := <-rch:
 			if !resp.Created {
-				return fmt.Errorf("watch not created")
+				return fmt.Errorf("watch not created: %s", resp.Err())
 			}
 		case <-tCtx.Done():
 			return fmt.Errorf("watch not created, timeout of %v exceeded", timeout)
