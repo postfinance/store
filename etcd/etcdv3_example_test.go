@@ -3,9 +3,9 @@ package etcd_test
 import (
 	"log"
 
-	"github.com/coreos/etcd/etcdserver/api/v3rpc/rpctypes"
 	"github.com/pkg/errors"
 	"github.com/postfinance/store/etcd"
+	"go.etcd.io/etcd/api/v3/v3rpc/rpctypes"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
@@ -38,7 +38,7 @@ func ExampleWithErrorHandler() {
 			fatal(err, "grpc Unavailable error - terminating")
 		}
 		// handle etcd server-side errors
-		// https://github.com/coreos/etcd/blob/master/etcdserver/api/v3rpc/rpctypes/error.go
+		// https://github.com/etcd-io/etcd/blob/api/v3.5.0-alpha.0/api/v3rpc/rpctypes/error.go
 		switch err {
 		case rpctypes.ErrNoSpace,
 			rpctypes.ErrTooManyRequests: // codes.ResourceExhausted

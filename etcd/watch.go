@@ -7,8 +7,8 @@ import (
 
 	"github.com/postfinance/store"
 
-	"github.com/coreos/etcd/clientv3"
 	"github.com/pkg/errors"
+	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
 // Watch installs a watcher on key
