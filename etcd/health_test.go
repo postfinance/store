@@ -7,9 +7,12 @@ import (
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	clientv3 "go.etcd.io/etcd/client/v3"
+	"go.etcd.io/etcd/tests/v3/integration"
 )
 
 func TestHealth(t *testing.T) {
+	integration.BeforeTestExternal(t)
+
 	t.Run("healthy", func(t *testing.T) {
 		for _, p := range []string{"", "root"} {
 			opts := []Opt{}

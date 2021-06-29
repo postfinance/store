@@ -17,6 +17,8 @@ import (
 )
 
 func TestKeyFunctions(t *testing.T) {
+	integration.BeforeTestExternal(t)
+
 	const (
 		prefix = "root"
 		middle = "branch"
@@ -69,6 +71,8 @@ func TestKeyFunctions(t *testing.T) {
 
 // nolint: funlen
 func TestGet(t *testing.T) {
+	integration.BeforeTestExternal(t)
+
 	for _, p := range []string{"", "root"} {
 		opts := []Opt{}
 		if p != "" {
@@ -197,6 +201,8 @@ func TestGet(t *testing.T) {
 
 // nolint: funlen
 func TestPut(t *testing.T) {
+	integration.BeforeTestExternal(t)
+
 	for _, p := range []string{"", "root"} {
 		opts := []Opt{}
 		if p != "" {
@@ -346,6 +352,8 @@ func TestPut(t *testing.T) {
 }
 
 func TestDel(t *testing.T) {
+	integration.BeforeTestExternal(t)
+
 	for _, p := range []string{"", "root"} {
 		opts := []Opt{}
 		if p != "" {
@@ -411,6 +419,8 @@ func TestDel(t *testing.T) {
 }
 
 func TestMarshal(t *testing.T) {
+	integration.BeforeTestExternal(t)
+
 	for _, p := range []string{"", "root"} {
 		opts := []Opt{}
 		if p != "" {
@@ -446,6 +456,8 @@ func TestMarshal(t *testing.T) {
 }
 
 func TestMarshal2(t *testing.T) {
+	integration.BeforeTestExternal(t)
+
 	for _, p := range []string{"", "root"} {
 		opts := []Opt{}
 		if p != "" {
@@ -486,9 +498,12 @@ If log is true, the integrated server logs output to stdout.
 This can be used in integration tests as follows:
 
 	func TestSomething(m *testing.M) {
+		integration.BeforeTestExternal(t)
 		b, s, teardown := setupTestStore(t, false. []Opt{})
 		defer teardown()
 	}
+
+The func integration.BeforeTestExternal(t) must be called on the start of every test.
 */
 // nolint: unparam // `log` always receives `false` (unparam)
 func setupTestStore(t *testing.T, log bool, opts []Opt) (store.BackendKeyer, *clientv3.Client, func()) {
