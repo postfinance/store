@@ -38,7 +38,7 @@ func ExampleWithErrorHandler() {
 			fatal(err, "grpc Unavailable error - terminating")
 		}
 		// handle etcd server-side errors
-		// https://github.com/etcd-io/etcd/blob/api/v3.5.0-alpha.0/api/v3rpc/rpctypes/error.go
+		// https://github.com/etcd-io/etcd/blob/api/v3.5.0/api/v3rpc/rpctypes/error.go
 		switch err {
 		case rpctypes.ErrNoSpace,
 			rpctypes.ErrTooManyRequests: // codes.ResourceExhausted
