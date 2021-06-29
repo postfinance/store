@@ -502,7 +502,7 @@ func setupTestStore(t *testing.T, log bool, opts []Opt) (store.BackendKeyer, *cl
 
 	backend, err := New(append([]Opt{WithClient(cli)}, opts...)...)
 	if err != nil {
-		panic(errors.Wrap(err, "OK"))
+		t.Errorf("failed to create backend: %w", err)
 	}
 
 	return backend, cli, func() { cluster.Terminate(t) }
