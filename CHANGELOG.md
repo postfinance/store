@@ -1,3 +1,12 @@
+## 0.2.0 (2021-06-30)
+
+
+### Bug Fixes
+
+* **test**: use t.Errorf instead of panic ([c66b987a](https://github.com/postfinance/store/commit/c66b987a))
+
+
+
 ## 0.1.3 (2021-02-12)
 
 
