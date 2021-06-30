@@ -7,16 +7,18 @@ import (
 	"testing"
 	"time"
 
-	"github.com/coreos/etcd/clientv3"
-	"github.com/coreos/etcd/integration"
 	"github.com/coreos/pkg/capnslog"
 	"github.com/pkg/errors"
 	"github.com/postfinance/store"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	clientv3 "go.etcd.io/etcd/client/v3"
+	"go.etcd.io/etcd/tests/v3/integration"
 )
 
 func TestKeyFunctions(t *testing.T) {
+	integration.BeforeTestExternal(t)
+
 	const (
 		prefix = "root"
 		middle = "branch"
@@ -69,6 +71,8 @@ func TestKeyFunctions(t *testing.T) {
 
 // nolint: funlen
 func TestGet(t *testing.T) {
+	integration.BeforeTestExternal(t)
+
 	for _, p := range []string{"", "root"} {
 		opts := []Opt{}
 		if p != "" {
@@ -197,6 +201,8 @@ func TestGet(t *testing.T) {
 
 // nolint: funlen
 func TestPut(t *testing.T) {
+	integration.BeforeTestExternal(t)
+
 	for _, p := range []string{"", "root"} {
 		opts := []Opt{}
 		if p != "" {
@@ -346,6 +352,8 @@ func TestPut(t *testing.T) {
 }
 
 func TestDel(t *testing.T) {
+	integration.BeforeTestExternal(t)
+
 	for _, p := range []string{"", "root"} {
 		opts := []Opt{}
 		if p != "" {
@@ -411,6 +419,8 @@ func TestDel(t *testing.T) {
 }
 
 func TestMarshal(t *testing.T) {
+	integration.BeforeTestExternal(t)
+
 	for _, p := range []string{"", "root"} {
 		opts := []Opt{}
 		if p != "" {
@@ -446,6 +456,8 @@ func TestMarshal(t *testing.T) {
 }
 
 func TestMarshal2(t *testing.T) {
+	integration.BeforeTestExternal(t)
+
 	for _, p := range []string{"", "root"} {
 		opts := []Opt{}
 		if p != "" {
@@ -486,9 +498,12 @@ If log is true, the integrated server logs output to stdout.
 This can be used in integration tests as follows:
 
 	func TestSomething(m *testing.M) {
+		integration.BeforeTestExternal(t)
 		b, s, teardown := setupTestStore(t, false. []Opt{})
 		defer teardown()
 	}
+
+The func integration.BeforeTestExternal(t) must be called on the start of every test.
 */
 // nolint: unparam // `log` always receives `false` (unparam)
 func setupTestStore(t *testing.T, log bool, opts []Opt) (store.BackendKeyer, *clientv3.Client, func()) {
@@ -502,7 +517,7 @@ func setupTestStore(t *testing.T, log bool, opts []Opt) (store.BackendKeyer, *cl
 
 	backend, err := New(append([]Opt{WithClient(cli)}, opts...)...)
 	if err != nil {
-		panic(errors.Wrap(err, "OK"))
+		t.Errorf("failed to create backend: %w", err)
 	}
 
 	return backend, cli, func() { cluster.Terminate(t) }

@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
+	"go.etcd.io/etcd/tests/v3/integration"
 
 	"github.com/postfinance/store"
 )
@@ -90,6 +91,8 @@ func (w watcher) OnDelete(k, v []byte) error {
 
 // nolint: funlen
 func TestWatch(t *testing.T) {
+	integration.BeforeTestExternal(t)
+
 	for _, p := range []string{"", "root"} {
 		opts := []Opt{}
 		if p != "" {
