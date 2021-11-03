@@ -89,11 +89,14 @@ func (e *Backend) Put(entry *store.Entry, ops ...store.PutOption) (bool, error) 
 	for _, op := range ops {
 		op.SetPutOption(opts)
 	}
-	// use the background context if no context is given
+
 	ctx := context.Background()
 	if opts.Context != nil {
 		ctx = opts.Context
 	}
+
+	rctx, cancel := e.requestContext(ctx)
+	defer cancel()
 
 	etcdOpts := []clientv3.OpOption{}
 
@@ -107,7 +110,7 @@ func (e *Backend) Put(entry *store.Entry, ops ...store.PutOption) (bool, error) 
 	if opts.TTL > 0 {
 		var err error
 
-		lease, err = e.client.Grant(ctx, int64(opts.TTL.Seconds()))
+		lease, err = e.client.Grant(rctx, int64(opts.TTL.Seconds()))
 		if e.errHandler(err) != nil {
 			return false, errors.New("could not get lease with ttl")
 		}
@@ -115,19 +118,11 @@ func (e *Backend) Put(entry *store.Entry, ops ...store.PutOption) (bool, error) 
 		etcdOpts = append(etcdOpts, clientv3.WithLease(lease.ID))
 	}
 
-	// add timeout to context if given
-	if e.RequestTimeout > 0 {
-		var cancel context.CancelFunc
-		ctx, cancel = context.WithTimeout(ctx, e.RequestTimeout)
-
-		defer cancel()
-	}
-
 	absKey := e.AbsKey(entry.Key)
 	value := string(entry.Value)
 
 	if opts.Insert {
-		resp, err := e.client.Txn(ctx).
+		resp, err := e.client.Txn(rctx).
 			If(clientv3.Compare(clientv3.Version(absKey), "=", 0)).
 			Then(clientv3.OpPut(absKey, value, etcdOpts...)).
 			Commit()
@@ -135,10 +130,10 @@ func (e *Backend) Put(entry *store.Entry, ops ...store.PutOption) (bool, error) 
 			return false, err
 		}
 
-		return resp.Succeeded, err
+		return resp.Succeeded, e.startKeepalive(ctx, lease, opts.ErrChan)
 	}
 
-	resp, err := e.client.Txn(ctx).
+	resp, err := e.client.Txn(rctx).
 		If(clientv3.Compare(clientv3.Value(absKey), "=", value)).
 		Else(clientv3.OpPut(absKey, value, etcdOpts...)).
 		Commit()
@@ -146,33 +141,7 @@ func (e *Backend) Put(entry *store.Entry, ops ...store.PutOption) (bool, error) 
 		return false, err
 	}
 
-	// start keep-alive and keep-alive monitor
-	if opts.ErrChan != nil {
-		// start keep-alive
-		ch, err := e.client.KeepAlive(ctx, lease.ID)
-		if err != nil {
-			return !resp.Succeeded, err
-		}
-		// start keep-alive monitor
-		go func() {
-			for {
-				select {
-				case <-ctx.Done():
-					opts.ErrChan <- context.Canceled
-
-					return
-				case _, ok := <-ch:
-					if !ok {
-						opts.ErrChan <- store.ErrResponseChannelClosed
-
-						return
-					}
-				}
-			}
-		}()
-	}
-
-	return !resp.Succeeded, err
+	return !resp.Succeeded, e.startKeepalive(ctx, lease, opts.ErrChan)
 }
 
 // Get is used to fetch an one ore many entries.
@@ -189,21 +158,15 @@ func (e *Backend) Get(key string, ops ...store.GetOption) ([]store.Entry, error)
 		etcdOpts = append(etcdOpts, clientv3.WithPrefix())
 	}
 
-	// use background context if no context is given
 	ctx := context.Background()
 	if opts.Context != nil {
 		ctx = opts.Context
 	}
 
-	// add timeout to context if given
-	if e.RequestTimeout > 0 {
-		var cancel context.CancelFunc
+	rctx, cancel := e.requestContext(ctx)
+	defer cancel()
 
-		ctx, cancel = context.WithTimeout(ctx, e.RequestTimeout)
-		defer cancel()
-	}
-
-	resp, err := e.client.Get(ctx, e.AbsKey(key), etcdOpts...)
+	resp, err := e.client.Get(rctx, e.AbsKey(key), etcdOpts...)
 	if e.errHandler(err) != nil {
 		return nil, err
 	}
@@ -261,23 +224,18 @@ func (e *Backend) Del(key string, ops ...store.DelOption) (int64, error) {
 		op.SetDelOption(opts)
 	}
 
-	// use background context if no context is given
 	ctx := context.Background()
 	if opts.Context != nil {
 		ctx = opts.Context
 	}
-	// add timeout to context if given
-	if e.RequestTimeout > 0 {
-		var cancel context.CancelFunc
 
-		ctx, cancel = context.WithTimeout(ctx, e.RequestTimeout)
-		defer cancel()
-	}
+	rctx, cancel := e.requestContext(ctx)
+	defer cancel()
 
 	absKey := e.AbsKey(key)
 
 	if opts.Prefix {
-		resp, err := e.client.Delete(ctx, absKey, clientv3.WithPrefix())
+		resp, err := e.client.Delete(rctx, absKey, clientv3.WithPrefix())
 		if e.errHandler(err) != nil {
 			return 0, err
 		}
@@ -285,7 +243,7 @@ func (e *Backend) Del(key string, ops ...store.DelOption) (int64, error) {
 		return resp.Deleted, nil
 	}
 
-	t, err := e.client.Txn(ctx).
+	t, err := e.client.Txn(rctx).
 		If(clientv3.Compare(clientv3.Version(absKey), ">", 0)).
 		Then(clientv3.OpDelete(absKey)).
 		Commit()
@@ -318,6 +276,45 @@ func (e *Backend) valid() error {
 	if e.client == nil && len(e.endpoints) == 0 {
 		return errors.New("configured etcd client and endpoints are empty")
 	}
+
+	return nil
+}
+
+func (e *Backend) requestContext(ctx context.Context) (context.Context, context.CancelFunc) {
+	if e.RequestTimeout == 0 {
+		return ctx, func() {}
+	}
+
+	// add timeout to context if given
+	return context.WithTimeout(ctx, e.RequestTimeout)
+}
+
+func (e *Backend) startKeepalive(ctx context.Context, lease *clientv3.LeaseGrantResponse, errChan chan<- error) error {
+	if errChan == nil {
+		return nil
+	}
+	// start keep-alive
+	ch, err := e.client.KeepAlive(ctx, lease.ID)
+	if err != nil {
+		return err
+	}
+	// start keep-alive monitor
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				errChan <- context.Canceled
+
+				return
+			case _, ok := <-ch:
+				if !ok {
+					errChan <- store.ErrResponseChannelClosed
+
+					return
+				}
+			}
+		}
+	}()
 
 	return nil
 }
