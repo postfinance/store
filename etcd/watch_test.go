@@ -14,7 +14,7 @@ import (
 	"github.com/postfinance/store"
 )
 
-// nolint: gochecknoglobals
+//nolint:gochecknoglobals
 var (
 	watcherCheckCount int
 	prefix            = "etcd|test"
@@ -89,7 +89,7 @@ func (w watcher) OnDelete(k, v []byte) error {
 	return nil
 }
 
-// nolint: funlen
+//nolint:funlen
 func TestWatch(t *testing.T) {
 	integration.BeforeTestExternal(t)
 

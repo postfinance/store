@@ -7,19 +7,18 @@ import (
 
 const (
 	start = "["
-	end   = "]" // nolint: deadcode, varcheck // `end` is unused
+	end   = "]" //nolint:deadcode,varcheck // `end` is unused
 	sep   = ","
 )
 
 // UnmarshalJSONList is a helper function, that unmarshals a list of json values to
 // a list of the corresponding type.
-// nolint: godox
-// TODO(zbindenren): performance test
+//nolint:godox // TODO(zbindenren): performance test
 func UnmarshalJSONList(v interface{}, key string, b Backend, opts ...GetOption) error {
 	var buf bytes.Buffer
-	options := append(opts, WithHandler(concat(&buf)))
+	opts = append(opts, WithHandler(concat(&buf)))
 
-	_, err := b.Get(key, options...)
+	_, err := b.Get(key, opts...)
 	if err != nil {
 		return err
 	}

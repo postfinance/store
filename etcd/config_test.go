@@ -108,7 +108,7 @@ func TestDuplicateTLSConfig(t *testing.T) {
 	}
 
 	for f, data := range sslData {
-		err := ioutil.WriteFile(f, []byte(data), 0644) // nolint: gosec // G306: Expect WriteFile permissions to be 0600 or less (gosec)
+		err := ioutil.WriteFile(f, []byte(data), 0644) //nolint:gosec // G306: Expect WriteFile permissions to be 0600 or less (gosec)
 		require.NoError(t, err)
 	}
 
@@ -155,7 +155,7 @@ func TestDuplicateTLSConfig(t *testing.T) {
 	}
 }
 
-// nolint: gochecknoglobals
+//nolint:gochecknoglobals
 var key = `-----BEGIN RSA PRIVATE KEY-----
 MIIEowIBAAKCAQEA1iXGN20mStbIoGMf12nOutZzDNZJa2t2B87IC4ZQp/9PLLKt
 n5aaBRkaDGV7GGW3WhWKaubjODjC7zwaiKJ75wDeQzE126AXlVNRabbiTk3kzEhe
@@ -185,7 +185,7 @@ mt+dewOupOGZliD14TVBaKMjc2dcKtMXOXyzMS5KbdDPmD9rzHGX
 -----END RSA PRIVATE KEY-----
 `
 
-// nolint: gochecknoglobals
+//nolint:gochecknoglobals
 var cert = `-----BEGIN CERTIFICATE-----
 MIIDBzCCAe+gAwIBAgIJAIGng0yg24ZTMA0GCSqGSIb3DQEBBQUAMBoxGDAWBgNV
 BAMMD3d3dy5leGFtcGxlLmNvbTAeFw0xNzExMTQxMTUzMDJaFw0yNzExMTIxMTUz
@@ -207,7 +207,7 @@ mUN2TfeN/X+LK3LRCe4h7hJ8MfH8Gv8lcgnQvwjfR5c7lvD9vb5zQP733hhcBAKE
 -----END CERTIFICATE-----
 `
 
-// nolint: gochecknoglobals
+//nolint:gochecknoglobals
 var ca = `-----BEGIN CERTIFICATE-----
 MIICPDCCAaUCEDyRMcsf9tAbDpq40ES/Er4wDQYJKoZIhvcNAQEFBQAwXzELMAkG
 A1UEBhMCVVMxFzAVBgNVBAoTDlZlcmlTaWduLCBJbmMuMTcwNQYDVQQLEy5DbGFz

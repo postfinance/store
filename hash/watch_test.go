@@ -13,7 +13,7 @@ import (
 	"github.com/postfinance/store/hash"
 )
 
-// nolint: gochecknoglobals
+//nolint:gochecknoglobals
 var (
 	prefix   = "etcd|test"
 	testData = []struct {
@@ -80,7 +80,7 @@ func (w *watcher1) OnDelete(k, v []byte) error {
 	return nil
 }
 
-// nolint: funlen
+//nolint:funlen
 func TestWatch(t *testing.T) {
 	t.Run("watch key", func(t *testing.T) {
 		for _, p := range []string{"", "root"} {

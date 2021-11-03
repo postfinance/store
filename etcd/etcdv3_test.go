@@ -69,7 +69,7 @@ func TestKeyFunctions(t *testing.T) {
 	})
 }
 
-// nolint: funlen
+//nolint:funlen
 func TestGet(t *testing.T) {
 	integration.BeforeTestExternal(t)
 
@@ -199,7 +199,7 @@ func TestGet(t *testing.T) {
 	}
 }
 
-// nolint: funlen
+//nolint:funlen
 func TestPut(t *testing.T) {
 	integration.BeforeTestExternal(t)
 
@@ -505,7 +505,7 @@ This can be used in integration tests as follows:
 
 The func integration.BeforeTestExternal(t) must be called on the start of every test.
 */
-// nolint: unparam // `log` always receives `false` (unparam)
+//nolint:unparam // `log` always receives `false` (unparam)
 func setupTestStore(t *testing.T, log bool, opts []Opt) (store.BackendKeyer, *clientv3.Client, func()) {
 	if !log {
 		capnslog.SetGlobalLogLevel(capnslog.ERROR)

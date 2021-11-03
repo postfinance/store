@@ -127,7 +127,7 @@ func (mockBackend) Watch(string, Watcher, ...WatchOption) error {
 	panic("not implemented")
 }
 
-func (m mockBackend) Put(e *Entry, opst ...PutOption) (bool, error) {
+func (m *mockBackend) Put(e *Entry, opst ...PutOption) (bool, error) {
 	m.entries = append(m.entries, *e)
 	return true, nil
 }
@@ -188,5 +188,5 @@ type testStruct struct {
 	} `json:"commands"`
 }
 
-// nolint: gochecknoglobals
+//nolint:gochecknoglobals
 var data = `{"id":"admin:lslb-pool","organization":"admin","name":"lslb-pool","description":"","user":"","group":"","shell":"bash","timeout":0,"interval":300000000000,"constraints":{"os":["linux"],"host":["p1-linux-mlsu005","p1-linux-mlsu006"],"files":["/usr/bin/lslb"]},"discovery":{"script":{"data":"echo \"fake-pool\"\n# sudo /usr/bin/lslb pools","rediscover":false}},"tags":null,"commands":{"start":{"shell":"/bin/true","timeout":"10s","rediscover":false},"status":{"shell":"/bin/true","timeout":"10s","rediscover":false},"stop":{"shell":"/bin/true","timeout":"10s","rediscover":false}}}`

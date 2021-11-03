@@ -66,7 +66,7 @@ func TestKeyFunctions(t *testing.T) {
 	})
 }
 
-// nolint: funlen
+//nolint:funlen
 func TestGet(t *testing.T) {
 	for _, p := range []string{"", "root"} {
 		opts := []hash.Opt{}
@@ -189,7 +189,7 @@ func TestGet(t *testing.T) {
 	}
 }
 
-// nolint: funlen
+//nolint:funlen
 func TestPut(t *testing.T) {
 	for _, p := range []string{"", "root"} {
 		opts := []hash.Opt{}
@@ -490,7 +490,7 @@ func TestBackendWithTTL(t *testing.T) {
 	}
 }
 
-// nolint: funlen, gocognit
+//nolint:funlen,gocognit
 func TestExpire(t *testing.T) {
 	entries, err := createEntries(10, nil)
 	require.NoError(t, err)
@@ -625,7 +625,7 @@ func TestExpire(t *testing.T) {
 	})
 }
 
-// nolint: unparam // `max` always receives `10` (unparam)
+//nolint:unparam // `max` always receives `10` (unparam)
 func createEntries(max int, b store.Backend) ([]store.Entry, error) {
 	expEntries := []store.Entry{}
 

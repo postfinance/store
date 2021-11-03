@@ -12,7 +12,7 @@ import (
 )
 
 // Watch installs a watcher on key
-// nolint: gocognit, gocyclo
+//nolint:gocognit,gocyclo
 func (e *Backend) Watch(key string, w store.Watcher, ops ...store.WatchOption) error {
 	opts := &store.WatchOptions{}
 
@@ -46,8 +46,7 @@ func (e *Backend) Watch(key string, w store.Watcher, ops ...store.WatchOption) e
 
 	// wait until the Watch is created or timeout exceeded
 	if err := func() error {
-		// nolint: godox
-		// TODO: use global etcd timeout
+		//nolint:godox // TODO: use global etcd timeout
 		timeout := time.Second * 5
 		tCtx, cancel := context.WithTimeout(ctx, timeout)
 		defer cancel()

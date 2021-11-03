@@ -197,7 +197,7 @@ func WithKeyFile(path string) Opt {
 			return nil
 		}
 
-		key, err := ioutil.ReadFile(path) // nolint: gosec // G304: Potential file inclusion via variable (gosec)
+		key, err := ioutil.ReadFile(path) //nolint:gosec // G304: Potential file inclusion via variable (gosec)
 		if err != nil {
 			return errors.Wrapf(err, "could not read key file %s", path)
 		}
@@ -236,7 +236,7 @@ func WithCertFile(path string) Opt {
 			return nil
 		}
 
-		cert, err := ioutil.ReadFile(path) // nolint: gosec // G304: Potential file inclusion via variable (gosec)
+		cert, err := ioutil.ReadFile(path) //nolint:gosec // G304: Potential file inclusion via variable (gosec)
 		if err != nil {
 			return errors.Wrapf(err, "could not read cert file %s", path)
 		}
@@ -275,7 +275,7 @@ func WithCAFile(path string) Opt {
 			return nil
 		}
 
-		ca, err := ioutil.ReadFile(path) // nolint: gosec // G304: Potential file inclusion via variable (gosec)
+		ca, err := ioutil.ReadFile(path) //nolint:gosec // G304: Potential file inclusion via variable (gosec)
 		if err != nil {
 			return errors.Wrapf(err, "could not read ca file %s", path)
 		}
@@ -391,7 +391,7 @@ func (s ssl) tlsConfig() (*tls.Config, error) {
 
 		tlsConfig = &tls.Config{
 			Certificates:       []tls.Certificate{cert},
-			InsecureSkipVerify: true, // nolint: gosec // G402: TLS InsecureSkipVerify set true. (gosec)
+			InsecureSkipVerify: true, //nolint:gosec // G402: TLS InsecureSkipVerify set true. (gosec)
 		}
 	}
 	// load CA cert
