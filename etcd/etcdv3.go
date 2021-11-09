@@ -175,6 +175,12 @@ func (e *Backend) Get(key string, ops ...store.GetOption) ([]store.Entry, error)
 		return []store.Entry{}, store.ErrKeyNotFound
 	}
 
+	if opts.Filter == nil {
+		opts.Filter = func([]byte, []byte) bool {
+			return true
+		}
+	}
+
 	if opts.Handler == nil {
 		opts.Handler = func([]byte, []byte) error {
 			return nil
@@ -184,6 +190,10 @@ func (e *Backend) Get(key string, ops ...store.GetOption) ([]store.Entry, error)
 	result := []store.Entry{}
 
 	for _, value := range resp.Kvs {
+		if ok := opts.Filter([]byte(e.RelKey(string(value.Key))), value.Value); !ok {
+			continue
+		}
+
 		if err := opts.Handler([]byte(e.RelKey(string(value.Key))), value.Value); err != nil {
 			return result, err
 		}

@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -103,6 +104,15 @@ func TestGet(t *testing.T) {
 			e, err := b.Get("key", store.WithPrefix())
 			require.NoError(t, err)
 			assert.Equal(t, expEntries, e)
+		})
+
+		t.Run("get with filter", func(t *testing.T) {
+			filter := func(k []byte, v []byte) bool {
+				return strings.HasSuffix(string(k), "6")
+			}
+			e, err := b.Get("key", store.WithPrefix(), store.WithFilter(filter))
+			require.NoError(t, err)
+			assert.Equal(t, expEntries[6], e[0])
 		})
 
 		t.Run("get with handler", func(t *testing.T) {
@@ -517,7 +527,7 @@ func setupTestStore(t *testing.T, log bool, opts []Opt) (store.BackendKeyer, *cl
 
 	backend, err := New(append([]Opt{WithClient(cli)}, opts...)...)
 	if err != nil {
-		t.Errorf("failed to create backend: %w", err)
+		t.Errorf("failed to create backend: %v", err)
 	}
 
 	return backend, cli, func() { cluster.Terminate(t) }
