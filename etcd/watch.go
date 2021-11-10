@@ -8,6 +8,7 @@ import (
 	"github.com/postfinance/store"
 
 	"github.com/pkg/errors"
+	"go.etcd.io/etcd/api/v3/mvccpb"
 	clientv3 "go.etcd.io/etcd/client/v3"
 )
 
@@ -101,10 +102,10 @@ func (e *Backend) Watch(key string, w store.Watcher, ops ...store.WatchOption) e
 			for _, ev := range wresp.Events {
 				key := []byte(e.RelKey(string(ev.Kv.Key)))
 
-				switch ev.Type.String() {
-				case "PUT":
+				switch ev.Type {
+				case mvccpb.PUT:
 					_ = handleError(w.OnPut(key, ev.Kv.Value))
-				case "DELETE":
+				case mvccpb.DELETE:
 					_ = handleError(w.OnDelete(key, ev.Kv.Value))
 				default:
 					_ = handleError(fmt.Errorf("watch received an unknown event type: %s", ev.Type.String()))
