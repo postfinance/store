@@ -3,6 +3,7 @@ package etcd
 import (
 	"context"
 	"fmt"
+	"reflect"
 	"testing"
 	"time"
 
@@ -246,4 +247,83 @@ func TestWatch(t *testing.T) {
 
 		teardown()
 	}
+}
+
+type A struct {
+	key string
+	op  string
+}
+
+func (a *A) SetKey(k string) {
+	a.key = k
+}
+
+func (a *A) SetOp(o string) {
+	a.op = o
+}
+
+var _ EventHandler = (*A)(nil)
+
+func TestRene(t *testing.T) {
+	c := make(chan *A)
+	// b := make(chan<- A)
+
+	ch, err := getChannel(c)
+	require.NoError(t, err)
+
+	tp, err := getChannelType(ch)
+	require.NoError(t, err)
+	item := reflect.New(tp).Interface()
+	fmt.Println(item)
+	return
+
+	/*
+		// fmt.Println(reflect.TypeOf(c).Elem().Kind())
+		fmt.Println(reflect.TypeOf(b).Elem())
+		dereferencedType := reflect.TypeOf(c).Elem().Elem()
+		item := reflect.New(dereferencedType).Interface()
+		eh, ok := item.(EventHandler)
+		fmt.Println(ok)
+
+		// ch := reflect.ValueOf(c)
+
+		eh.SetOp("op")
+		eh.SetKey("key")
+
+		go func() {
+			ch.Send(reflect.ValueOf(eh))
+			ch.Close()
+		}()
+
+		for a := range c {
+			fmt.Println(a)
+		}
+	*/
+}
+
+func getChannel(v interface{}) (reflect.Value, error) {
+	ch := reflect.ValueOf(v)
+
+	if ch.Kind() != reflect.Chan {
+		return reflect.Value{}, errors.New("underlying type is not a channel")
+	}
+
+	if ch.Type().ChanDir() == reflect.RecvDir {
+		return reflect.Value{}, errors.New("cannot send to channel")
+	}
+
+	return ch, nil
+}
+
+func getChannelType(v reflect.Value) (reflect.Type, error) {
+	e := v.Type().Elem()
+	if e.Kind() == reflect.Ptr {
+		e = e.Elem()
+	}
+
+	if _, ok := reflect.New(e).Interface().(EventHandler); !ok {
+		return nil, errors.New("channel type does not implement EventHandler type")
+	}
+
+	return e, nil
 }
