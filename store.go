@@ -16,6 +16,10 @@ var (
 	ErrResponseChannelClosed = errors.New("keepalive response channel has been closed")
 )
 
+// FilterFunc is a function that is called on (each) returned
+// key-value pair during a Get request.
+type FilterFunc func([]byte, []byte) bool
+
 // HandlerFunc is a function that is called on (each) returned
 // key-value pair during a Get request.
 type HandlerFunc func([]byte, []byte) error
@@ -96,6 +100,7 @@ func Put(b Backend, key string, v interface{}, opts ...PutOption) (bool, error) 
 // GetOptions represent all possible options for Get requests.
 type GetOptions struct {
 	Prefix    bool
+	Filter    FilterFunc
 	Handler   HandlerFunc
 	Context   context.Context
 	Unmarshal *unmarshal
@@ -140,6 +145,14 @@ func WithContext(ctx context.Context) interface {
 	WatchOption
 } {
 	return &contextOption{Context: ctx}
+}
+
+// WithFilter is an option to use an FilterFunc on each
+// key-value pair during a Get request.
+func WithFilter(f FilterFunc) interface {
+	GetOption
+} {
+	return &filterOption{Filter: f}
 }
 
 // WithHandler is an option to use an HandlerFunc on each
@@ -255,6 +268,15 @@ func (c *contextOption) SetPutOption(opts *PutOptions) {
 
 func (c *contextOption) SetDelOption(opts *DelOptions) {
 	opts.Context = c.Context
+}
+
+// filter
+type filterOption struct {
+	Filter FilterFunc
+}
+
+func (h *filterOption) SetGetOption(opts *GetOptions) {
+	opts.Filter = h.Filter
 }
 
 // handler
