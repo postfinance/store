@@ -148,7 +148,6 @@ func (h *Backend) keys(prefix string) []string {
 // Get returns a list of store entries
 // WithPrefix, WithHandler are supported
 // WithContext will be ignored
-//nolint:gocyclo // review
 func (h *Backend) Get(key string, ops ...store.GetOption) ([]store.Entry, error) {
 	opts := &store.GetOptions{}
 
@@ -239,9 +238,10 @@ func (h *Backend) Put(e *store.Entry, ops ...store.PutOption) (bool, error) {
 
 	// Get entry
 	entries, err := h.Get(e.Key)
+	keyExists := err == nil
 
 	// Insert mode and key exists
-	if opts.Insert && err == nil {
+	if opts.Insert && keyExists {
 		return false, nil
 	}
 
@@ -273,8 +273,9 @@ func (h *Backend) Put(e *store.Entry, ops ...store.PutOption) (bool, error) {
 	h.Unlock()
 
 	h.notify(absKey, changeNotification{
-		Type: put,
-		Data: *e,
+		Type:     put,
+		Data:     *e,
+		isCreate: !keyExists,
 	})
 
 	// keep-alive

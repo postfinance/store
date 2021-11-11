@@ -27,6 +27,7 @@ type notifyCallbackFunc func(changeNotification)
 
 // changeNotification will be sent to the watch channel if an entry was changed
 type changeNotification struct {
-	Type change
-	Data store.Entry
+	Type     change
+	Data     store.Entry
+	isCreate bool
 }

@@ -3,7 +3,6 @@ package etcd
 import (
 	"context"
 	"fmt"
-	"reflect"
 	"testing"
 	"time"
 
@@ -249,81 +248,98 @@ func TestWatch(t *testing.T) {
 	}
 }
 
-type A struct {
-	key string
-	op  string
+type Item struct {
+	store.EventMeta
+	Value string
 }
 
-func (a *A) SetKey(k string) {
-	a.key = k
+func (i *Item) path() string {
+	return i.Key()
 }
 
-func (a *A) SetOp(o string) {
-	a.op = o
-}
+var _ store.KeyOpSetter = (*Item)(nil)
 
-var _ EventHandler = (*A)(nil)
+//nolint:funlen
+func TestWatchChan(t *testing.T) {
+	integration.BeforeTestExternal(t)
 
-func TestRene(t *testing.T) {
-	c := make(chan *A)
-	// b := make(chan<- A)
+	b, _, teardown := setupTestStore(t, false, []Opt{WithPrefix("")})
 
-	ch, err := getChannel(c)
-	require.NoError(t, err)
+	t.Run("watch key with prefix", func(t *testing.T) {
+		watchReady = make(chan struct{})
+		itemChan := make(chan *Item)
+		errChan := make(chan error)
 
-	tp, err := getChannelType(ch)
-	require.NoError(t, err)
-	item := reflect.New(tp).Interface()
-	fmt.Println(item)
-	return
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
 
-	/*
-		// fmt.Println(reflect.TypeOf(c).Elem().Kind())
-		fmt.Println(reflect.TypeOf(b).Elem())
-		dereferencedType := reflect.TypeOf(c).Elem().Elem()
-		item := reflect.New(dereferencedType).Interface()
-		eh, ok := item.(EventHandler)
-		fmt.Println(ok)
+		notifyCreated := func() {
+			close(watchReady)
+		}
 
-		// ch := reflect.ValueOf(c)
+		w, err := b.WatchChan("", itemChan, errChan,
+			store.WithPrefix(),
+			store.WithNotifyCreated(notifyCreated),
+			store.WithContext(ctx),
+		)
+		require.NoError(t, err)
+		<-watchReady // wait for the channel created an test store.WithNotifyCreated()
 
-		eh.SetOp("op")
-		eh.SetKey("key")
+		go w.Start()
+
+		items := []Item{
+			{Value: "1", EventMeta: eventMeta("/1", store.Create)},
+			{Value: "2", EventMeta: eventMeta("/1", store.Update)},
+			{Value: "3", EventMeta: eventMeta("/2", store.Create)},
+		}
+
+		// eventMeta is added to easily use assert.Equal to compare expected
+		// with actual values.
+		expected := []Item{}
+		expected = append(expected, items...)
+		expected = append(expected, Item{EventMeta: eventMeta("/2", store.Delete)})
 
 		go func() {
-			ch.Send(reflect.ValueOf(eh))
-			ch.Close()
+			for i := range items {
+				item := Item{
+					Value: items[i].Value,
+				}
+				path := items[i].path()
+				_, err = store.Put(b, path, item)
+				require.NoError(t, err)
+			}
+
+			_, err = b.Del(items[2].path())
+			require.NoError(t, err)
 		}()
 
-		for a := range c {
-			fmt.Println(a)
+		actual := []Item{}
+
+		for {
+			select {
+			case item := <-itemChan:
+				actual = append(actual, *item)
+				if len(actual) == len(expected) {
+					assert.Equal(t, expected, actual)
+					return
+				}
+			case err := <-errChan:
+				t.Errorf("an error occurred: %v", err)
+				return
+			case <-ctx.Done():
+				t.Error("timeout occurred")
+				return
+			}
 		}
-	*/
+	})
+
+	teardown()
 }
 
-func getChannel(v interface{}) (reflect.Value, error) {
-	ch := reflect.ValueOf(v)
+func eventMeta(key string, op store.Operation) store.EventMeta {
+	e := store.EventMeta{}
+	e.SetKey(key)
+	e.SetOp(op)
 
-	if ch.Kind() != reflect.Chan {
-		return reflect.Value{}, errors.New("underlying type is not a channel")
-	}
-
-	if ch.Type().ChanDir() == reflect.RecvDir {
-		return reflect.Value{}, errors.New("cannot send to channel")
-	}
-
-	return ch, nil
-}
-
-func getChannelType(v reflect.Value) (reflect.Type, error) {
-	e := v.Type().Elem()
-	if e.Kind() == reflect.Ptr {
-		e = e.Elem()
-	}
-
-	if _, ok := reflect.New(e).Interface().(EventHandler); !ok {
-		return nil, errors.New("channel type does not implement EventHandler type")
-	}
-
-	return e, nil
+	return e
 }

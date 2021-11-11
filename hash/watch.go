@@ -4,7 +4,9 @@ import (
 	"context"
 	"fmt"
 
+	"github.com/pkg/errors"
 	"github.com/postfinance/store"
+	"github.com/postfinance/store/internal/common"
 )
 
 // Watch a key or prefix
@@ -30,13 +32,7 @@ func (h *Backend) Watch(key string, w store.Watcher, ops ...store.WatchOption) e
 		return nil
 	}
 	if opts.ErrorHandler != nil {
-		handleError = func(err error) error {
-			if err == nil {
-				return nil
-			}
-
-			return opts.ErrorHandler(err)
-		}
+		handleError = opts.ErrorHandler
 	}
 
 	if err := w.BeforeLoop(); err != nil {
@@ -66,4 +62,77 @@ func (h *Backend) Watch(key string, w store.Watcher, ops ...store.WatchOption) e
 	<-ctx.Done()
 
 	return w.OnDone()
+}
+
+// WatchChan creates a watcher for a key or prefix and unmarshals events into channel.
+// The channel elements have to implement the store.KeyOpSetter interface.
+func (h *Backend) WatchChan(key string, channel interface{}, errChan chan error, ops ...store.WatchOption) (store.WatchStarter, error) {
+	if errChan == nil {
+		return nil, errors.New("error channal cannot be nil")
+	}
+
+	w, err := common.NewChannelSender(channel, nil)
+	if err != nil {
+		return nil, err
+	}
+
+	opts := &store.WatchOptions{}
+
+	for _, op := range ops {
+		op.SetWatchOption(opts)
+	}
+
+	ctx := context.Background() // will never cancel
+	if opts.Context != nil {
+		ctx = opts.Context
+	}
+
+	h.register(key, opts.Prefix, h.handleChangeNotification(w, errChan))
+
+	// notify the caller that Watch is created and ready to receive events
+	if opts.NotifyCreated != nil {
+		opts.NotifyCreated()
+	}
+
+	return &ChannelWatcher{
+		ctx: ctx,
+		w:   w,
+	}, nil
+}
+
+// ChannelWatcher implements the WatchStarter interface.
+type ChannelWatcher struct {
+	ctx context.Context
+	w   *common.ChannelSender
+}
+
+// Start starts the watcher and blocks until context is canceled.
+func (c ChannelWatcher) Start() {
+	// wait for cancellation of the context
+	<-c.ctx.Done()
+}
+
+// Start starts the watcher and blocks until context is canceled.
+func (h *Backend) handleChangeNotification(w *common.ChannelSender, errChan chan error) func(msg changeNotification) {
+	return func(msg changeNotification) {
+		var (
+			key = h.RelKey(msg.Data.Key)
+			op  store.Operation
+		)
+
+		switch msg.Type {
+		case put:
+			if msg.isCreate {
+				op = store.Create
+			} else {
+				op = store.Update
+			}
+		case del:
+			op = store.Delete
+		default:
+			errChan <- fmt.Errorf("watch received an unknown event type: %s", msg.Type)
+		}
+
+		_ = w.Send(key, op, msg.Data.Value)
+	}
 }

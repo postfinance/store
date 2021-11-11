@@ -82,7 +82,6 @@ func (e *Backend) KeyLeaf(key string) string {
 }
 
 // Put is used to insert or update an entry
-//nolint:gocyclo
 func (e *Backend) Put(entry *store.Entry, ops ...store.PutOption) (bool, error) {
 	opts := &store.PutOptions{}
 
@@ -145,7 +144,6 @@ func (e *Backend) Put(entry *store.Entry, ops ...store.PutOption) (bool, error) 
 }
 
 // Get is used to fetch an one ore many entries.
-//nolint:gocyclo
 func (e *Backend) Get(key string, ops ...store.GetOption) ([]store.Entry, error) {
 	opts := &store.GetOptions{}
 
