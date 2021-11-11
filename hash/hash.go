@@ -148,11 +148,18 @@ func (h *Backend) keys(prefix string) []string {
 // Get returns a list of store entries
 // WithPrefix, WithHandler are supported
 // WithContext will be ignored
+//nolint:gocyclo // review
 func (h *Backend) Get(key string, ops ...store.GetOption) ([]store.Entry, error) {
 	opts := &store.GetOptions{}
 
 	for _, op := range ops {
 		op.SetGetOption(opts)
+	}
+
+	if opts.Filter == nil {
+		opts.Filter = func([]byte, []byte) bool {
+			return true
+		}
 	}
 
 	if opts.Handler == nil {
@@ -176,6 +183,10 @@ func (h *Backend) Get(key string, ops ...store.GetOption) ([]store.Entry, error)
 		h.RUnlock()
 
 		if ok && h.exists(v) {
+			if ok := opts.Filter([]byte(v.Data.Key), v.Data.Value); !ok {
+				continue
+			}
+
 			if opts.Unmarshal != nil && !opts.Unmarshal.IsSlice() {
 				return nil, json.Unmarshal(v.Data.Value, &opts.Unmarshal.Input)
 			}
