@@ -33,6 +33,7 @@ type Backend struct {
 	ctx                  context.Context
 	errHandler           store.ErrorFunc
 	dialOptions          []grpc.DialOption
+	watchNotifyTimeout   time.Duration
 }
 
 // AbsKey will convert a relativ key in a absolute key

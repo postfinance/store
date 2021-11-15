@@ -24,8 +24,8 @@ type HandlerFunc func([]byte, []byte) error
 // ErrorFunc is a function called on (each) error not returned
 type ErrorFunc func(error) error
 
-// NotifyCallback TODO(sauterm): describe
-// Name: NotifyFunc?
+// NotifyCallback is a function that is called after a watch create event
+// is received.
 type NotifyCallback func()
 
 // Backend is the interface required for a key value store.

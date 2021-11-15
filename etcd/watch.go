@@ -46,7 +46,7 @@ func (e *Backend) Watch(key string, w store.Watcher, ops ...store.WatchOption) e
 	rch := e.client.Watch(clientv3.WithRequireLeader(wCtx), e.AbsKey(key), etcdOpts...)
 
 	// wait until the Watch is created or timeout exceeded
-	if err := waitForCreateEvent(ctx, rch, 5*time.Second); err != nil {
+	if err := waitForCreateEvent(ctx, rch, e.watchNotifyTimeout); err != nil {
 		return err
 	}
 
@@ -134,7 +134,7 @@ func (e *Backend) WatchChan(key string, channel interface{}, errChan chan error,
 	srcChan := e.client.Watch(clientv3.WithRequireLeader(ctx), e.AbsKey(key), etcdOpts...)
 
 	// wait until the Watch is created or timeout exceeded
-	if err := waitForCreateEvent(wCtx, srcChan, 5*time.Second); err != nil {
+	if err := waitForCreateEvent(wCtx, srcChan, e.watchNotifyTimeout); err != nil {
 		return nil, err
 	}
 
