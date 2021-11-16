@@ -29,6 +29,10 @@ func NewChannelSender(channel interface{}, unmarshal UnmarshalFunc) (*ChannelSen
 
 	e := ch.Type().Elem()
 
+	if e.Kind() != reflect.Ptr && e.Kind() != reflect.Struct || e.Kind() == reflect.Ptr && e.Elem().Kind() != reflect.Struct {
+		return nil, errors.New("channel type is not a struct or a pointer to a struct")
+	}
+
 	if _, ok := reflect.Indirect(reflect.New(e)).Interface().(store.KeyOpSetter); !ok {
 		return nil, errors.New("channel type does not implement store.KeyOpSetter interface")
 	}
@@ -70,18 +74,18 @@ func (w *ChannelSender) Send(key string, op store.Operation, data []byte) error 
 		}
 	}
 
+	value := reflect.ValueOf(item) // this is the pointer
 	if w.channel.Type().Elem().Kind() != reflect.Ptr {
-		w.channel.Send(reflect.Indirect(reflect.ValueOf(item)))
-		return nil
+		value = reflect.Indirect(value)
 	}
 
-	w.channel.Send(reflect.ValueOf(item))
+	w.channel.Send(value)
 
 	return nil
 }
 
 // creator returns a function similar to reflect.New with the difference,
-// that it also initializes pointers to structs implementing
+// that it also initializes the pointer to first embedded struct implementing
 // store.KeyOpSetter interface.
 func creator(ift reflect.Type) creatorFunc {
 	if ift.Kind() == reflect.Ptr {
@@ -95,12 +99,15 @@ func creator(ift reflect.Type) creatorFunc {
 		keyOpSetterType reflect.Type
 	)
 
+	// no check necessary that ift is a struct. this is performed above.
 	for i := 0; i < ift.NumField(); i++ {
 		v := ift.Field(i)
 
 		if v.Type.Implements(keyOpSetter) {
 			index = i
 			keyOpSetterType = v.Type
+
+			break
 		}
 	}
 
