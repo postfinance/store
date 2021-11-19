@@ -12,7 +12,7 @@ import (
 // NewChannelSender creates a ChannelSender. The passed channel type must implmement
 // the store.KeyOpSetter interface. Additionally, if the channel is a receive-only
 // channel, an error is returned.
-func NewChannelSender(channel interface{}, unmarshal UnmarshalFunc) (*ChannelSender, error) {
+func NewChannelSender(channel interface{}, unmarshal UnmarshalFunc, keySplitter func(string) []string) (*ChannelSender, error) {
 	if channel == nil {
 		return nil, errors.New("channel is nil")
 	}
@@ -43,30 +43,44 @@ func NewChannelSender(channel interface{}, unmarshal UnmarshalFunc) (*ChannelSen
 	}
 
 	return &ChannelSender{
-		channel:   ch,
-		create:    creator(e),
-		unmarshal: u,
+		channel:     ch,
+		create:      creator(e),
+		unmarshal:   u,
+		keySplitter: keySplitter,
 	}, nil
 }
 
 // ChannelSender sends data to a channel. See Write method for more details.
 type ChannelSender struct {
-	channel   reflect.Value
-	create    creatorFunc
-	unmarshal UnmarshalFunc
+	channel     reflect.Value
+	create      creatorFunc
+	unmarshal   UnmarshalFunc
+	keySplitter func(string) []string
 }
 
 // UnmarshalFunc is a function that can unmarshal data to an object v.
 type UnmarshalFunc func(data []byte, v interface{}) error
 
 // Send creates a new instance of the channel's type (which must implement store.KeyOpSetter
-// interface see NewChannelSender) and applies SetKey and SetOp method. If data is not empty, it
-// it is unmarshaled into the newly created instance and sends the result on the channel.
+// interface see NewChannelSender) and applies SetKey and SetOp method.
+//
+// If channel's type implements store.FromKeyer and keySplitter func is not nil, FromKey is
+// applied on the splitted key. This can be useful for setting values from key.
+//
+// If data is not empty, it is unmarshaled into the newly created instance and sends the
+// result on the channel.
 func (w *ChannelSender) Send(key string, op store.Operation, data []byte) error {
 	item := w.create().Interface().(store.KeyOpSetter)
 
 	item.SetKey(key)
 	item.SetOp(op)
+
+	if k, ok := item.(store.FromKeyer); ok && w.keySplitter != nil {
+		splitted := w.keySplitter(key)
+		if err := k.FromKey(splitted); err != nil {
+			return err
+		}
+	}
 
 	if len(data) > 0 {
 		if err := w.unmarshal(data, item); err != nil {

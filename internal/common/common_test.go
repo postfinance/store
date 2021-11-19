@@ -1,6 +1,8 @@
 package common
 
 import (
+	"errors"
+	"strings"
 	"testing"
 
 	"github.com/postfinance/store"
@@ -12,6 +14,17 @@ import (
 type Item1 struct {
 	store.EventMeta
 	Value string
+}
+
+// FromKey sets values from splitted key.
+func (i *Item1) FromKey(key []string) error {
+	if len(key) < 1 {
+		return errors.New("not enough elements in key")
+	}
+
+	i.Value = key[0]
+
+	return nil
 }
 
 type Item2 struct {
@@ -40,6 +53,7 @@ const (
 
 var (
 	_ store.KeyOpSetter = (*Item1)(nil)
+	_ store.FromKeyer   = (*Item1)(nil)
 	_ store.KeyOpSetter = Item2{}
 	_ store.KeyOpSetter = (*Item2)(nil)
 	_ store.KeyOpSetter = (*Item3)(nil)
@@ -48,7 +62,7 @@ var (
 func TestChannel(t *testing.T) {
 	t.Run("channel is pointer type with embedded store.EventMeta", func(t *testing.T) {
 		channel := make(chan *Item1, 1)
-		w, err := NewChannelSender(channel, nil)
+		w, err := NewChannelSender(channel, nil, nil)
 		require.NoError(t, err)
 		err = w.Send("key", store.Update, []byte(dataJSON))
 		require.NoError(t, err)
@@ -57,7 +71,7 @@ func TestChannel(t *testing.T) {
 
 	t.Run("channel is pointer type with embedded *store.EventMeta", func(t *testing.T) {
 		channel := make(chan *Item2, 1)
-		w, err := NewChannelSender(channel, nil)
+		w, err := NewChannelSender(channel, nil, nil)
 		require.NoError(t, err)
 		err = w.Send("key", store.Update, []byte(dataJSON))
 		require.NoError(t, err)
@@ -66,7 +80,7 @@ func TestChannel(t *testing.T) {
 
 	t.Run("channel is not pointer type with embedded *store.EventMeta", func(t *testing.T) {
 		channel := make(chan Item2, 1)
-		w, err := NewChannelSender(channel, nil)
+		w, err := NewChannelSender(channel, nil, nil)
 		require.NoError(t, err)
 		err = w.Send("key", store.Update, []byte(dataJSON))
 		require.NoError(t, err)
@@ -75,7 +89,7 @@ func TestChannel(t *testing.T) {
 
 	t.Run("channel is pointer type with which implements store.KeyOpSetter natively", func(t *testing.T) {
 		channel := make(chan *Item3, 1)
-		w, err := NewChannelSender(channel, nil)
+		w, err := NewChannelSender(channel, nil, nil)
 		require.NoError(t, err)
 		err = w.Send("key", store.Update, []byte(dataJSON))
 		require.NoError(t, err)
@@ -84,13 +98,21 @@ func TestChannel(t *testing.T) {
 
 	t.Run("custom unmarshal func", func(t *testing.T) {
 		channel := make(chan *Item1, 1)
-		w, err := NewChannelSender(channel, yaml.Unmarshal)
+		w, err := NewChannelSender(channel, yaml.Unmarshal, nil)
 		require.NoError(t, err)
 		err = w.Send("key", store.Update, []byte(dataYAML))
 		require.NoError(t, err)
 		assert.Equal(t, &Item1{Value: "value1", EventMeta: *newMeta("key", store.Update)}, <-channel)
 	})
 
+	t.Run("channel is pointer type with embedded store.EventMeta and implements store.FromKeyer", func(t *testing.T) {
+		channel := make(chan *Item1, 1)
+		w, err := NewChannelSender(channel, nil, func(key string) []string { return strings.Split(key, ",") })
+		require.NoError(t, err)
+		err = w.Send("key", store.Delete, []byte{})
+		require.NoError(t, err)
+		assert.Equal(t, &Item1{Value: "key", EventMeta: *newMeta("key", store.Delete)}, <-channel)
+	})
 }
 
 func newMeta(key string, op store.Operation) *store.EventMeta {

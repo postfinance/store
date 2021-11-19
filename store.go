@@ -135,6 +135,11 @@ type KeyOpSetter interface {
 	SetOp(Operation)
 }
 
+// FromKeyer sets values from splitted key.
+type FromKeyer interface {
+	FromKey([]string) error
+}
+
 // Operation represents a store operation.
 type Operation string
 

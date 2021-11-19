@@ -250,7 +250,18 @@ func TestWatch(t *testing.T) {
 
 type Item struct {
 	store.EventMeta
-	Value string
+	Value   string
+	keyLeaf string
+}
+
+func (i *Item) FromKey(key []string) error {
+	if len(key) == 0 {
+		i.keyLeaf = "n/a"
+	}
+
+	i.keyLeaf = key[len(key)-1]
+
+	return nil
 }
 
 func (i *Item) path() string {
@@ -258,6 +269,7 @@ func (i *Item) path() string {
 }
 
 var _ store.KeyOpSetter = (*Item)(nil)
+var _ store.FromKeyer = (*Item)(nil)
 
 //nolint:funlen
 func TestWatchChan(t *testing.T) {
@@ -287,17 +299,17 @@ func TestWatchChan(t *testing.T) {
 
 		go w.Start()
 
-		items := []Item{
-			{Value: "1", EventMeta: eventMeta("/1", store.Create)},
-			{Value: "2", EventMeta: eventMeta("/1", store.Update)},
-			{Value: "3", EventMeta: eventMeta("/2", store.Create)},
-		}
-
 		// eventMeta is added to easily use assert.Equal to compare expected
 		// with actual values.
+		items := []Item{
+			{Value: "1", keyLeaf: "1", EventMeta: eventMeta("/1", store.Create)},
+			{Value: "2", keyLeaf: "1", EventMeta: eventMeta("/1", store.Update)},
+			{Value: "3", keyLeaf: "2", EventMeta: eventMeta("/2", store.Create)},
+		}
+
 		expected := []Item{}
 		expected = append(expected, items...)
-		expected = append(expected, Item{EventMeta: eventMeta("/2", store.Delete)})
+		expected = append(expected, Item{keyLeaf: "2", EventMeta: eventMeta("/2", store.Delete)})
 
 		go func() {
 			for i := range items {

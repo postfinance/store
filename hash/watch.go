@@ -71,7 +71,7 @@ func (h *Backend) WatchChan(key string, channel interface{}, errChan chan error,
 		return nil, errors.New("error channal cannot be nil")
 	}
 
-	w, err := common.NewChannelSender(channel, nil)
+	w, err := common.NewChannelSender(channel, nil, h.SplitKey)
 	if err != nil {
 		return nil, err
 	}
