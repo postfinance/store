@@ -64,8 +64,8 @@ type UnmarshalFunc func(data []byte, v interface{}) error
 // Send creates a new instance of the channel's type (which must implement store.KeyOpSetter
 // interface see NewChannelSender) and applies SetKey and SetOp method.
 //
-// If channel's type implements store.FromKeyer and keySplitter func is not nil, FromKey is
-// applied on the splitted key. This can be useful for setting values from key.
+// If channel's type implements store.KeyMarshaller and keySplitter func is not nil, MarshalKey is
+// applied on the splitted key. This can be useful for setting struct fields from key.
 //
 // If data is not empty, it is unmarshaled into the newly created instance and sends the
 // result on the channel.
@@ -75,9 +75,9 @@ func (w *ChannelSender) Send(key string, op store.Operation, data []byte) error 
 	item.SetKey(key)
 	item.SetOp(op)
 
-	if k, ok := item.(store.FromKeyer); ok && w.keySplitter != nil {
+	if k, ok := item.(store.KeyMarshaller); ok && w.keySplitter != nil {
 		splitted := w.keySplitter(key)
-		if err := k.FromKey(splitted); err != nil {
+		if err := k.MarshalKey(splitted); err != nil {
 			return err
 		}
 	}

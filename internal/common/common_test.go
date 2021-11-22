@@ -17,7 +17,7 @@ type Item1 struct {
 }
 
 // FromKey sets values from splitted key.
-func (i *Item1) FromKey(key []string) error {
+func (i *Item1) MarshalKey(key []string) error {
 	if len(key) < 1 {
 		return errors.New("not enough elements in key")
 	}
@@ -52,11 +52,11 @@ const (
 )
 
 var (
-	_ store.KeyOpSetter = (*Item1)(nil)
-	_ store.FromKeyer   = (*Item1)(nil)
-	_ store.KeyOpSetter = Item2{}
-	_ store.KeyOpSetter = (*Item2)(nil)
-	_ store.KeyOpSetter = (*Item3)(nil)
+	_ store.KeyOpSetter   = (*Item1)(nil)
+	_ store.KeyMarshaller = (*Item1)(nil)
+	_ store.KeyOpSetter   = Item2{}
+	_ store.KeyOpSetter   = (*Item2)(nil)
+	_ store.KeyOpSetter   = (*Item3)(nil)
 )
 
 func TestChannel(t *testing.T) {

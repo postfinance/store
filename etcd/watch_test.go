@@ -254,7 +254,7 @@ type Item struct {
 	keyLeaf string
 }
 
-func (i *Item) FromKey(key []string) error {
+func (i *Item) MarshalKey(key []string) error {
 	if len(key) == 0 {
 		i.keyLeaf = "n/a"
 	}
@@ -269,7 +269,7 @@ func (i *Item) path() string {
 }
 
 var _ store.KeyOpSetter = (*Item)(nil)
-var _ store.FromKeyer = (*Item)(nil)
+var _ store.KeyMarshaller = (*Item)(nil)
 
 //nolint:funlen
 func TestWatchChan(t *testing.T) {

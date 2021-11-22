@@ -135,9 +135,9 @@ type KeyOpSetter interface {
 	SetOp(Operation)
 }
 
-// FromKeyer sets values from splitted key.
-type FromKeyer interface {
-	FromKey([]string) error
+// KeyMarshaller sets struct fields from splitted key.
+type KeyMarshaller interface {
+	MarshalKey([]string) error
 }
 
 // Operation represents a store operation.
