@@ -361,11 +361,12 @@ func (h *Backend) del(e store.Entry) {
 
 	h.Lock()
 	delete(h.data, absKey)
+	h.Unlock()
+
 	h.notify(absKey, changeNotification{
 		Type: del,
 		Data: e,
 	})
-	h.Unlock()
 }
 
 // Close exists to implement the store interface, there
