@@ -140,6 +140,7 @@ func (h *Backend) keys(prefix string) []string {
 		}
 	}
 	h.RUnlock()
+
 	sort.Strings(keys)
 
 	return keys
