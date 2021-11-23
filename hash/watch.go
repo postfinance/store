@@ -87,7 +87,7 @@ func (h *Backend) WatchChan(key string, channel interface{}, errChan chan error,
 		ctx = opts.Context
 	}
 
-	h.register(key, opts.Prefix, h.handleChangeNotification(w, errChan))
+	h.register(h.AbsKey(key), opts.Prefix, h.handleChangeNotification(w, errChan))
 
 	// notify the caller that Watch is created and ready to receive events
 	if opts.NotifyCreated != nil {
