@@ -16,7 +16,7 @@ type Item1 struct {
 	Value string
 }
 
-// FromKey sets values from splitted key.
+// MarshalKey sets values from splitted key.
 func (i *Item1) MarshalKey(key []string) error {
 	if len(key) < 1 {
 		return errors.New("not enough elements in key")
