@@ -6,7 +6,8 @@ import (
 	"crypto/x509"
 	"encoding/pem"
 	"fmt"
-	"io/ioutil"
+	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/pkg/errors"
@@ -213,7 +214,7 @@ func WithKeyFile(path string) Opt {
 			return nil
 		}
 
-		key, err := ioutil.ReadFile(path) //nolint:gosec // G304: Potential file inclusion via variable (gosec)
+		key, err := os.ReadFile(path) //nolint:gosec // G304: Potential file inclusion via variable (gosec)
 		if err != nil {
 			return errors.Wrapf(err, "could not read key file %s", path)
 		}
@@ -252,7 +253,7 @@ func WithCertFile(path string) Opt {
 			return nil
 		}
 
-		cert, err := ioutil.ReadFile(path) //nolint:gosec // G304: Potential file inclusion via variable (gosec)
+		cert, err := os.ReadFile(path) //nolint:gosec // G304: Potential file inclusion via variable (gosec)
 		if err != nil {
 			return errors.Wrapf(err, "could not read cert file %s", path)
 		}
@@ -291,7 +292,7 @@ func WithCAFile(path string) Opt {
 			return nil
 		}
 
-		ca, err := ioutil.ReadFile(path) //nolint:gosec // G304: Potential file inclusion via variable (gosec)
+		ca, err := os.ReadFile(filepath.Clean(path))
 		if err != nil {
 			return errors.Wrapf(err, "could not read ca file %s", path)
 		}
