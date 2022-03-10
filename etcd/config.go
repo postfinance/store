@@ -17,8 +17,9 @@ import (
 
 // Constants
 const (
-	DfltSeparator    = '/'
-	DfltKeepAliveTTL = 30 * time.Second
+	DfltSeparator          = '/'
+	DfltKeepAliveTTL       = 30 * time.Second
+	DfltWatchNotifyTimeout = 5 * time.Second
 )
 
 // verify that *Backend implements store.Backend
@@ -28,8 +29,9 @@ var _ store.Backend = &Backend{}
 // has to be used.
 func New(opts ...Opt) (*Backend, error) {
 	e := Backend{
-		separator:  DfltSeparator,
-		errHandler: func(err error) error { return err },
+		separator:          DfltSeparator,
+		errHandler:         func(err error) error { return err },
+		watchNotifyTimeout: DfltWatchNotifyTimeout,
 	}
 
 	for _, option := range opts {
@@ -116,6 +118,20 @@ func WithRequestTimeout(timeout time.Duration) Opt {
 		}
 
 		e.RequestTimeout = timeout
+
+		return nil
+	}
+}
+
+// WithWatchNotifyTimeout determines how long to wait for a
+// watch notify create event. Default is 5s.
+func WithWatchNotifyTimeout(timeout time.Duration) Opt {
+	return func(e *Backend) error {
+		if timeout <= 0 {
+			return errors.New("watch notify timeout cannot be <= 0")
+		}
+
+		e.watchNotifyTimeout = timeout
 
 		return nil
 	}

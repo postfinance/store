@@ -247,3 +247,111 @@ func TestWatch(t *testing.T) {
 		teardown()
 	}
 }
+
+type Item struct {
+	store.EventMeta
+	Value   string
+	keyLeaf string
+}
+
+func (i *Item) MarshalKey(key []string) error {
+	if len(key) == 0 {
+		i.keyLeaf = "n/a"
+	}
+
+	i.keyLeaf = key[len(key)-1]
+
+	return nil
+}
+
+func (i *Item) path() string {
+	return i.Key()
+}
+
+var _ store.KeyOpSetter = (*Item)(nil)
+var _ store.KeyMarshaller = (*Item)(nil)
+
+//nolint:funlen
+func TestWatchChan(t *testing.T) {
+	integration.BeforeTestExternal(t)
+
+	b, _, teardown := setupTestStore(t, false, []Opt{WithPrefix("")})
+
+	t.Run("watch key with prefix", func(t *testing.T) {
+		watchReady = make(chan struct{})
+		itemChan := make(chan *Item)
+		errChan := make(chan error)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		notifyCreated := func() {
+			close(watchReady)
+		}
+
+		w, err := b.WatchChan("", itemChan, errChan,
+			store.WithPrefix(),
+			store.WithNotifyCreated(notifyCreated),
+			store.WithContext(ctx),
+		)
+		require.NoError(t, err)
+		<-watchReady // wait for the channel created an test store.WithNotifyCreated()
+
+		go w.Start()
+
+		// eventMeta is added to easily use assert.Equal to compare expected
+		// with actual values.
+		items := []Item{
+			{Value: "1", keyLeaf: "1", EventMeta: eventMeta("/1", store.Create)},
+			{Value: "2", keyLeaf: "1", EventMeta: eventMeta("/1", store.Update)},
+			{Value: "3", keyLeaf: "2", EventMeta: eventMeta("/2", store.Create)},
+		}
+
+		expected := []Item{}
+		expected = append(expected, items...)
+		expected = append(expected, Item{keyLeaf: "2", EventMeta: eventMeta("/2", store.Delete)})
+
+		go func() {
+			for i := range items {
+				item := Item{
+					Value: items[i].Value,
+				}
+				path := items[i].path()
+				_, err = store.Put(b, path, item)
+				require.NoError(t, err)
+			}
+
+			_, err = b.Del(items[2].path())
+			require.NoError(t, err)
+		}()
+
+		actual := []Item{}
+
+		for {
+			select {
+			case item := <-itemChan:
+				actual = append(actual, *item)
+				if len(actual) == len(expected) {
+					assert.Equal(t, expected, actual)
+					return
+				}
+			case err := <-errChan:
+				t.Errorf("an error occurred: %v", err)
+				return
+			case <-ctx.Done():
+				t.Error("timeout occurred")
+				return
+			}
+		}
+	})
+
+	teardown()
+}
+
+func eventMeta(key string, op store.Operation) store.EventMeta {
+	e := store.EventMeta{}
+	e.SetKey(key)
+	e.SetOp(op)
+
+	return e
+}

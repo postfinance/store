@@ -201,6 +201,10 @@ func (*mockBackend) Watch(string, store.Watcher, ...store.WatchOption) error {
 	panic("not implemented")
 }
 
+func (*mockBackend) WatchChan(string, interface{}, chan error, ...store.WatchOption) (store.WatchStarter, error) {
+	panic("not implemented")
+}
+
 func (m *mockBackend) Put(e *store.Entry, opst ...store.PutOption) (bool, error) {
 	m.entries = append(m.entries, *e)
 	return true, nil

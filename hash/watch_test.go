@@ -4,6 +4,7 @@ import (
 	"context"
 	"fmt"
 	"testing"
+	"time"
 
 	"github.com/pkg/errors"
 	"github.com/stretchr/testify/assert"
@@ -312,4 +313,98 @@ func TestWatchLoad(t *testing.T) {
 			<-watchDone
 		}
 	})
+}
+
+type Item struct {
+	store.EventMeta
+	Value string
+}
+
+func (i *Item) path() string {
+	return i.Key()
+}
+
+var _ store.KeyOpSetter = (*Item)(nil)
+
+//nolint:funlen
+func TestWatchChan(t *testing.T) {
+	b, err := hash.New(hash.WithPrefix(""))
+	require.NoError(t, err)
+
+	t.Run("watch key with prefix", func(t *testing.T) {
+		watchReady := make(chan struct{})
+		itemChan := make(chan *Item)
+		errChan := make(chan error)
+
+		ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+		defer cancel()
+
+		notifyCreated := func() {
+			close(watchReady)
+		}
+
+		w, err := b.WatchChan("", itemChan, errChan,
+			store.WithPrefix(),
+			store.WithNotifyCreated(notifyCreated),
+			store.WithContext(ctx),
+		)
+		require.NoError(t, err)
+
+		<-watchReady // wait for the channel created an test store.WithNotifyCreated()
+
+		go w.Start()
+
+		// eventMeta is added to easily use assert.Equal to compare expected
+		// with actual values.
+		items := []Item{
+			{Value: "1", EventMeta: eventMeta("/1", store.Create)},
+			{Value: "2", EventMeta: eventMeta("/2", store.Create)},
+			{Value: "3", EventMeta: eventMeta("/2", store.Update)},
+		}
+
+		expected := []Item{}
+		expected = append(expected, items...)
+		expected = append(expected, Item{EventMeta: eventMeta("/2", store.Delete), Value: "3"})
+
+		go func() {
+			for i := range items {
+				item := Item{
+					Value: items[i].Value,
+				}
+				path := items[i].path()
+				_, err = store.Put(b, path, item)
+				require.NoError(t, err)
+			}
+
+			_, err = b.Del(items[1].path())
+			require.NoError(t, err)
+		}()
+
+		actual := []Item{}
+
+		for {
+			select {
+			case item := <-itemChan:
+				actual = append(actual, *item)
+				if len(actual) == len(expected) {
+					assert.Equal(t, expected, actual)
+					return
+				}
+			case err := <-errChan:
+				t.Errorf("an error occurred: %v", err)
+				return
+			case <-ctx.Done():
+				t.Error("timeout occurred")
+				return
+			}
+		}
+	})
+}
+
+func eventMeta(key string, op store.Operation) store.EventMeta {
+	e := store.EventMeta{}
+	e.SetKey(key)
+	e.SetOp(op)
+
+	return e
 }

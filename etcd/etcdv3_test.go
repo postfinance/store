@@ -465,40 +465,6 @@ func TestMarshal(t *testing.T) {
 	}
 }
 
-func TestMarshal2(t *testing.T) {
-	integration.BeforeTestExternal(t)
-
-	for _, p := range []string{"", "root"} {
-		opts := []Opt{}
-		if p != "" {
-			opts = append(opts, WithPrefix(p))
-		}
-
-		b, _, teardown := setupTestStore(t, false, opts)
-
-		type testStruct struct {
-			Value1 string
-			Value2 int
-		}
-
-		exp := testStruct{
-			Value1: "value1",
-			Value2: 42,
-		}
-		key := "key"
-		value, err := json.Marshal(exp)
-		require.NoError(t, err)
-		_, err = b.Put(&store.Entry{Key: key, Value: value})
-		require.NoError(t, err)
-
-		bla := []testStruct{}
-		err = store.UnmarshalJSONList(&bla, key, b)
-		require.NoError(t, err)
-
-		teardown()
-	}
-}
-
 /*
 SetupTestStore starts an embedded etcd server.
 The returned function shall be used as teardown function.

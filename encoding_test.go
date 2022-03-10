@@ -8,15 +8,6 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestUnmarshalList(t *testing.T) {
-	count := 1000
-	b := newMockBackend(count)
-	l := []testStruct{}
-	err := UnmarshalJSONList(&l, "", b)
-	require.NoError(t, err)
-	assert.Len(t, l, count)
-}
-
 func TestUnmarshal(t *testing.T) {
 	count := 1000
 	b := newMockBackend(count)
@@ -34,19 +25,6 @@ func TestUnmarshal(t *testing.T) {
 	assert.Len(t, l, count)
 }
 
-func benchmarkUnmarshalList(i int, b *testing.B) {
-	b.StopTimer()
-
-	back := newMockBackend(i)
-
-	b.ReportAllocs()
-	b.StartTimer()
-
-	for n := 0; n < b.N; n++ {
-		l := []testStruct{}
-		_ = UnmarshalJSONList(&l, "", back)
-	}
-}
 func benchmarkUnmarshal(i int, b *testing.B) {
 	b.StopTimer()
 
@@ -72,26 +50,16 @@ func benchmarkUnmarshal(i int, b *testing.B) {
 
 /*
 BenchmarkUnmarshal10-4                    200000            194390 ns/op
-BenchmarkUnmarshalList10-4                300000            201912 ns/op
 BenchmarkUnmarshal100-4                    20000           2076871 ns/op
-BenchmarkUnmarshalList100-4                20000           2110142 ns/op
 BenchmarkUnmarshal1000-4                    2000          21495289 ns/op
-BenchmarkUnmarshalList1000-4                2000          21822339 ns/op
 BenchmarkUnmarshal10000-4                    200         233705937 ns/op
-BenchmarkUnmarshalList10000-4                200         211692563 ns/op
 BenchmarkUnmarshal100000-4                    20        2317840686 ns/op
-BenchmarkUnmarshalList100000-4                20        2118017559 ns/op
 */
-func BenchmarkUnmarshal10(b *testing.B)         { benchmarkUnmarshal(10, b) }
-func BenchmarkUnmarshalList10(b *testing.B)     { benchmarkUnmarshalList(10, b) }
-func BenchmarkUnmarshal100(b *testing.B)        { benchmarkUnmarshal(100, b) }
-func BenchmarkUnmarshalList100(b *testing.B)    { benchmarkUnmarshalList(100, b) }
-func BenchmarkUnmarshal1000(b *testing.B)       { benchmarkUnmarshal(1000, b) }
-func BenchmarkUnmarshalList1000(b *testing.B)   { benchmarkUnmarshalList(1000, b) }
-func BenchmarkUnmarshal10000(b *testing.B)      { benchmarkUnmarshal(10000, b) }
-func BenchmarkUnmarshalList10000(b *testing.B)  { benchmarkUnmarshalList(10000, b) }
-func BenchmarkUnmarshal100000(b *testing.B)     { benchmarkUnmarshal(100000, b) }
-func BenchmarkUnmarshalList100000(b *testing.B) { benchmarkUnmarshalList(100000, b) }
+func BenchmarkUnmarshal10(b *testing.B)     { benchmarkUnmarshal(10, b) }
+func BenchmarkUnmarshal100(b *testing.B)    { benchmarkUnmarshal(100, b) }
+func BenchmarkUnmarshal1000(b *testing.B)   { benchmarkUnmarshal(1000, b) }
+func BenchmarkUnmarshal10000(b *testing.B)  { benchmarkUnmarshal(10000, b) }
+func BenchmarkUnmarshal100000(b *testing.B) { benchmarkUnmarshal(100000, b) }
 
 type mockBackend struct {
 	entries []Entry
@@ -134,6 +102,10 @@ func (m *mockBackend) Put(e *Entry, opst ...PutOption) (bool, error) {
 
 func (mockBackend) Close() error {
 	return nil
+}
+
+func (m *mockBackend) WatchChan(string, interface{}, chan error, ...WatchOption) (WatchStarter, error) {
+	return nil, nil
 }
 
 func newMockBackend(max int) Backend {
@@ -188,5 +160,4 @@ type testStruct struct {
 	} `json:"commands"`
 }
 
-//nolint:gochecknoglobals
-var data = `{"id":"admin:lslb-pool","organization":"admin","name":"lslb-pool","description":"","user":"","group":"","shell":"bash","timeout":0,"interval":300000000000,"constraints":{"os":["linux"],"host":["p1-linux-mlsu005","p1-linux-mlsu006"],"files":["/usr/bin/lslb"]},"discovery":{"script":{"data":"echo \"fake-pool\"\n# sudo /usr/bin/lslb pools","rediscover":false}},"tags":null,"commands":{"start":{"shell":"/bin/true","timeout":"10s","rediscover":false},"status":{"shell":"/bin/true","timeout":"10s","rediscover":false},"stop":{"shell":"/bin/true","timeout":"10s","rediscover":false}}}`
+const data = `{"id":"admin:lslb-pool","organization":"admin","name":"lslb-pool","description":"","user":"","group":"","shell":"bash","timeout":0,"interval":300000000000,"constraints":{"os":["linux"],"host":["p1-linux-mlsu005","p1-linux-mlsu006"],"files":["/usr/bin/lslb"]},"discovery":{"script":{"data":"echo \"fake-pool\"\n# sudo /usr/bin/lslb pools","rediscover":false}},"tags":null,"commands":{"start":{"shell":"/bin/true","timeout":"10s","rediscover":false},"status":{"shell":"/bin/true","timeout":"10s","rediscover":false},"stop":{"shell":"/bin/true","timeout":"10s","rediscover":false}}}`
