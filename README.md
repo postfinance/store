@@ -11,5 +11,3 @@
 ```bash
 go get -v github.com/postfinance/store
 ```
-
-
