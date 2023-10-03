@@ -145,6 +145,8 @@ func (e *Backend) Put(entry *store.Entry, ops ...store.PutOption) (bool, error) 
 }
 
 // Get is used to fetch an one ore many entries.
+//
+//nolint:gocyclo // code in one place
 func (e *Backend) Get(key string, ops ...store.GetOption) ([]store.Entry, error) {
 	opts := &store.GetOptions{}
 

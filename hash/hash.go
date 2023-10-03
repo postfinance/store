@@ -23,7 +23,7 @@ type entry struct {
 
 // Backend hash backend
 type Backend struct {
-	sync.RWMutex
+	mu              sync.RWMutex
 	prefix          string
 	prefixReady2Use string
 	separator       rune
@@ -86,7 +86,7 @@ func (h *Backend) TTL() time.Duration {
 
 // register a watch key
 func (h *Backend) register(key string, prefix bool, f notifyCallbackFunc) {
-	h.Lock()
+	h.mu.Lock()
 	if prefix {
 		if _, ok := h.watchKeyPrefix[key]; !ok {
 			h.watchKeyPrefix[key] = []notifyCallbackFunc{}
@@ -99,7 +99,7 @@ func (h *Backend) register(key string, prefix bool, f notifyCallbackFunc) {
 		}
 		h.watchKey[key] = append(h.watchKey[key], f)
 	}
-	h.Unlock()
+	h.mu.Unlock()
 }
 
 // notify all registrants
@@ -133,13 +133,13 @@ func (h *Backend) exists(e entry) bool {
 func (h *Backend) keys(prefix string) []string {
 	keys := []string{}
 
-	h.RLock()
+	h.mu.RLock()
 	for k := range h.data {
 		if strings.HasPrefix(k, prefix) {
 			keys = append(keys, k)
 		}
 	}
-	h.RUnlock()
+	h.mu.RUnlock()
 	sort.Strings(keys)
 
 	return keys
@@ -148,6 +148,8 @@ func (h *Backend) keys(prefix string) []string {
 // Get returns a list of store entries
 // WithPrefix, WithHandler are supported
 // WithContext will be ignored
+//
+//nolint:gocyclo // code in one place
 func (h *Backend) Get(key string, ops ...store.GetOption) ([]store.Entry, error) {
 	opts := &store.GetOptions{}
 
@@ -177,9 +179,9 @@ func (h *Backend) Get(key string, ops ...store.GetOption) ([]store.Entry, error)
 	result := []store.Entry{}
 
 	for _, k := range keys {
-		h.RLock()
+		h.mu.RLock()
 		v, ok := h.data[k]
-		h.RUnlock()
+		h.mu.RUnlock()
 
 		if ok && h.exists(v) {
 			if ok := opts.Filter([]byte(v.Data.Key), v.Data.Value); !ok {
@@ -264,13 +266,13 @@ func (h *Backend) Put(e *store.Entry, ops ...store.PutOption) (bool, error) {
 	// Insert/Update the entry
 	absKey := h.AbsKey(e.Key)
 
-	h.Lock()
+	h.mu.Lock()
 	h.data[absKey] = entry{
 		Data:    *e,
 		Updated: time.Now(),
 		TTL:     ttl,
 	}
-	h.Unlock()
+	h.mu.Unlock()
 
 	h.notify(absKey, changeNotification{
 		Type:     put,
@@ -311,8 +313,8 @@ func (h *Backend) keepAlive(key string) error {
 	// Insert/Update the entry
 	absKey := h.AbsKey(key)
 
-	h.Lock()
-	defer h.Unlock()
+	h.mu.Lock()
+	defer h.mu.Unlock()
 
 	e, ok := h.data[absKey]
 	if !ok {
@@ -359,13 +361,13 @@ func (h *Backend) Del(key string, ops ...store.DelOption) (int64, error) {
 func (h *Backend) del(e store.Entry) {
 	absKey := h.AbsKey(e.Key)
 
-	h.Lock()
+	h.mu.Lock()
 	delete(h.data, absKey)
 	h.notify(absKey, changeNotification{
 		Type: del,
 		Data: e,
 	})
-	h.Unlock()
+	h.mu.Unlock()
 }
 
 // Close exists to implement the store interface, there

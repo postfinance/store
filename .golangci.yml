@@ -25,7 +25,7 @@ linters-settings:
     disabled-checks:
       - hugeParam
   gocyclo:
-    min-complexity: 20
+    min-complexity: 15
   revive:
     min-confidence: 0.8
   govet:
@@ -36,6 +36,7 @@ linters-settings:
     locale: US
   nolintlint:
     allow-leading-space: false
+    require-explanation: true
     allow-no-explanation:
       - gocognit
       - funlen
@@ -45,8 +46,6 @@ linters:
   disable-all: true
   enable:
     - bodyclose
-    - deadcode
-    - depguard
     - dogsled
     - dupl
     - errcheck
@@ -72,13 +71,12 @@ linters:
     - rowserrcheck
     - exportloopref
     - staticcheck
-    - structcheck
     - stylecheck
+    - sqlclosecheck
     - typecheck
     - unconvert
     - unparam
     - unused
-    - varcheck
     - whitespace
     - wsl
 

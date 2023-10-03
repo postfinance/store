@@ -14,6 +14,8 @@ import (
 )
 
 // Watch installs a watcher on key
+//
+//nolint:gocyclo // code in one place
 func (e *Backend) Watch(key string, w store.Watcher, ops ...store.WatchOption) error {
 	opts := &store.WatchOptions{}
 
