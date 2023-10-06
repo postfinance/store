@@ -1,3 +1,20 @@
+## 0.3.0 (2023-10-06)
+
+
+### Bug Fixes
+
+* **common**: Put with WithKeepAlive option now works as expected ([242ba2cf](https://github.com/postfinance/store/commit/242ba2cf))
+* **watcher**: use types instead of string ([4e308e13](https://github.com/postfinance/store/commit/4e308e13))
+
+
+### New Features
+
+* **common**: add WatchChan method ([3a62e64e](https://github.com/postfinance/store/commit/3a62e64e))
+  > This method creates a watcher for a key or prefix and unmarshals events into channel.
+* **common**: filter added ([c3dfed23](https://github.com/postfinance/store/commit/c3dfed23))
+
+
+
 ## 0.2.0 (2021-06-30)
 
 
