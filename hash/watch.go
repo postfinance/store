@@ -64,11 +64,11 @@ func (h *Backend) Watch(key string, w store.Watcher, ops ...store.WatchOption) e
 	return w.OnDone()
 }
 
-// WatchChan creates a watcher for a key or prefix and unmarshals events into channel.
+// WatchChan creates a watcher for a key or prefix and unmarshal events into channel.
 // The channel elements have to implement the store.KeyOpSetter interface.
 func (h *Backend) WatchChan(key string, channel interface{}, errChan chan error, ops ...store.WatchOption) (store.WatchStarter, error) {
 	if errChan == nil {
-		return nil, errors.New("error channal cannot be nil")
+		return nil, errors.New("error channel cannot be nil")
 	}
 
 	w, err := common.NewChannelSender(channel, nil, h.SplitKey)
@@ -87,7 +87,7 @@ func (h *Backend) WatchChan(key string, channel interface{}, errChan chan error,
 		ctx = opts.Context
 	}
 
-	h.register(key, opts.Prefix, h.handleChangeNotification(w, errChan))
+	h.register(h.AbsKey(key), opts.Prefix, h.handleChangeNotification(w, errChan))
 
 	// notify the caller that Watch is created and ready to receive events
 	if opts.NotifyCreated != nil {
