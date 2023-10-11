@@ -381,6 +381,14 @@ func WithDialOptions(d ...grpc.DialOption) Opt {
 	}
 }
 
+// WithMaxCallRecvMsgSize add the default call option grpc.MaxCallRecvMsgSize with the given size
+func WithMaxCallRecvMsgSize(bytes int) Opt {
+	return func(e *Backend) error {
+		e.dialOptions = append(e.dialOptions, grpc.WithDefaultCallOptions(grpc.MaxCallRecvMsgSize(bytes)))
+		return nil
+	}
+}
+
 type ssl struct {
 	key  []byte
 	cert []byte
