@@ -28,7 +28,7 @@ func (h *Backend) Watch(key string, w store.Watcher, ops ...store.WatchOption) e
 	}
 
 	// send errors to nirvana or, if given, to the error channel
-	handleError := func(err error) error {
+	handleError := func(_ error) error {
 		return nil
 	}
 	if opts.ErrorHandler != nil {

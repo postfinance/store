@@ -97,6 +97,7 @@ func (h *Backend) register(key string, prefix bool, f notifyCallbackFunc) {
 		if _, ok := h.watchKey[key]; !ok {
 			h.watchKey[key] = []notifyCallbackFunc{}
 		}
+
 		h.watchKey[key] = append(h.watchKey[key], f)
 	}
 	h.mu.Unlock()
