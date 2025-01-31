@@ -2,7 +2,7 @@ package etcd
 
 import (
 	"context"
-	"io/ioutil"
+	"os"
 	"testing"
 	"time"
 
@@ -108,7 +108,7 @@ func TestDuplicateTLSConfig(t *testing.T) {
 	}
 
 	for f, data := range sslData {
-		err := ioutil.WriteFile(f, []byte(data), 0644) //nolint:gosec // G306: Expect WriteFile permissions to be 0600 or less (gosec)
+		err := os.WriteFile(f, []byte(data), 0o644) //nolint:gosec // G306: Expect WriteFile permissions to be 0600 or less (gosec)
 		require.NoError(t, err)
 	}
 
