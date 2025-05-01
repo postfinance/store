@@ -72,9 +72,6 @@ type UnmarshalFunc func(data []byte, v any) error
 func (w *ChannelSender) Send(key string, op store.Operation, data []byte) error {
 	item := w.create().Interface().(store.KeyOpSetter)
 
-	item.SetKey(key)
-	item.SetOp(op)
-
 	if k, ok := item.(store.KeyMarshaller); ok && w.keySplitter != nil {
 		splitted := w.keySplitter(key)
 		if err := k.MarshalKey(splitted); err != nil {
@@ -87,6 +84,9 @@ func (w *ChannelSender) Send(key string, op store.Operation, data []byte) error 
 			return err
 		}
 	}
+
+	item.SetKey(key)
+	item.SetOp(op)
 
 	value := reflect.ValueOf(item) // this is the pointer
 	if w.channel.Type().Elem().Kind() != reflect.Ptr {
