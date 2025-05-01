@@ -43,13 +43,13 @@ func TestGetOptions(t *testing.T) {
 	})
 
 	t.Run("WithUnmarshal no pointer", func(t *testing.T) {
-		v := map[string]interface{}{}
+		v := map[string]any{}
 		opts := &store.GetOptions{}
 		assert.Panics(t, func() { store.WithUnmarshal(v).SetGetOption(opts) })
 	})
 
 	t.Run("WithUnmarshal value", func(t *testing.T) {
-		v := map[string]interface{}{}
+		v := map[string]any{}
 		opts := &store.GetOptions{}
 		store.WithUnmarshal(&v).SetGetOption(opts)
 		require.NotNil(t, opts.Unmarshal)
@@ -59,7 +59,7 @@ func TestGetOptions(t *testing.T) {
 	})
 
 	t.Run("WithUnmarshal slice", func(t *testing.T) {
-		v := []map[string]interface{}{}
+		v := []map[string]any{}
 		opts := &store.GetOptions{}
 		store.WithUnmarshal(&v).SetGetOption(opts)
 		require.NotNil(t, opts.Unmarshal)
@@ -201,7 +201,7 @@ func (*mockBackend) Watch(string, store.Watcher, ...store.WatchOption) error {
 	panic("not implemented")
 }
 
-func (*mockBackend) WatchChan(string, interface{}, chan error, ...store.WatchOption) (store.WatchStarter, error) {
+func (*mockBackend) WatchChan(string, any, chan error, ...store.WatchOption) (store.WatchStarter, error) {
 	panic("not implemented")
 }
 

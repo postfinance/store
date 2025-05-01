@@ -104,7 +104,7 @@ func (mockBackend) Close() error {
 	return nil
 }
 
-func (m *mockBackend) WatchChan(string, interface{}, chan error, ...WatchOption) (WatchStarter, error) {
+func (m *mockBackend) WatchChan(string, any, chan error, ...WatchOption) (WatchStarter, error) {
 	return nil, nil
 }
 
@@ -140,7 +140,7 @@ type testStruct struct {
 			Rediscover bool   `json:"rediscover"`
 		} `json:"script"`
 	} `json:"discovery"`
-	Tags     interface{} `json:"tags"`
+	Tags     any `json:"tags"`
 	Commands struct {
 		Start struct {
 			Shell      string `json:"shell"`

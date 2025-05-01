@@ -99,7 +99,7 @@ func (e *Backend) Watch(key string, w store.Watcher, ops ...store.WatchOption) e
 
 // WatchChan creates a watcher for a key or prefix and unmarshals events into channel.
 // The channel elements have to implement the store.KeyOpSetter interface.
-func (e *Backend) WatchChan(key string, channel interface{}, errChan chan error, ops ...store.WatchOption) (store.WatchStarter, error) {
+func (e *Backend) WatchChan(key string, channel any, errChan chan error, ops ...store.WatchOption) (store.WatchStarter, error) {
 	if errChan == nil {
 		return nil, errors.New("error channal cannot be nil")
 	}

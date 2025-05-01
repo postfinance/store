@@ -108,7 +108,7 @@ func WithKeepAlive(errChan chan<- error) interface {
 //
 // In combination with WithPrefix, v should be a pointer to
 // a slice.
-func WithUnmarshal(v interface{}) interface {
+func WithUnmarshal(v any) interface {
 	GetOption
 } {
 	return &unmarshalOption{Unmarshal: v}
@@ -242,7 +242,7 @@ func (i *insertOption) SetPutOption(opts *PutOptions) {
 
 // unmarshal
 type unmarshalOption struct {
-	Unmarshal interface{}
+	Unmarshal any
 }
 
 func (u *unmarshalOption) SetGetOption(opts *GetOptions) {
@@ -263,7 +263,7 @@ func (u *unmarshalOption) SetGetOption(opts *GetOptions) {
 }
 
 type unmarshal struct {
-	Input    interface{}
+	Input    any
 	Ptr      reflect.Value
 	Type     reflect.Kind
 	Slice    reflect.Value
@@ -278,7 +278,7 @@ func (u *unmarshal) IsSlice() bool {
 	return u.Type == reflect.Slice
 }
 
-func (u *unmarshal) Element() interface{} {
+func (u *unmarshal) Element() any {
 	if u == nil || !u.IsSlice() {
 		return nil
 	}

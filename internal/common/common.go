@@ -12,7 +12,7 @@ import (
 // NewChannelSender creates a ChannelSender. The passed channel type must implmement
 // the store.KeyOpSetter interface. Additionally, if the channel is a receive-only
 // channel, an error is returned.
-func NewChannelSender(channel interface{}, unmarshal UnmarshalFunc, keySplitter func(string) []string) (*ChannelSender, error) {
+func NewChannelSender(channel any, unmarshal UnmarshalFunc, keySplitter func(string) []string) (*ChannelSender, error) {
 	if channel == nil {
 		return nil, errors.New("channel is nil")
 	}
@@ -59,7 +59,7 @@ type ChannelSender struct {
 }
 
 // UnmarshalFunc is a function that can unmarshal data to an object v.
-type UnmarshalFunc func(data []byte, v interface{}) error
+type UnmarshalFunc func(data []byte, v any) error
 
 // Send creates a new instance of the channel's type (which must implement store.KeyOpSetter
 // interface see NewChannelSender) and applies SetKey and SetOp method.
